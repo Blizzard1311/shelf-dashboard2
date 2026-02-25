@@ -124,7 +124,7 @@ export default function Dashboard() {
           <h2 className="text-white text-xl lg:text-2xl font-bold mb-1">
             {user?.name || user?.email || "用户"}
           </h2>
-          <p className="text-white/60 text-sm">货架数据分析平台 · 内部管理系统</p>
+          <p className="text-white/60 text-sm">货架效率透析系统 · 内部管理系统</p>
         </div>
       </div>
 

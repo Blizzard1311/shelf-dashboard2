@@ -107,7 +107,7 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
             <Package className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm font-bold text-foreground truncate">货架数据平台</h1>
+            <h1 className="text-sm font-bold text-foreground truncate">货架效率透析系统</h1>
             <p className="text-xs text-muted-foreground truncate">内部数据管理系统</p>
           </div>
           {/* 移动端关闭按钮 */}
@@ -120,10 +120,11 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
         </div>
 
         {/* 导航区域 */}
-        <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
-          <p className="px-3 mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <nav className="flex-1 px-3 py-6 overflow-y-auto">
+          <p className="px-3 mb-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             功能模块
           </p>
+          <div className="space-y-3">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path;
@@ -167,6 +168,7 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
               </Link>
             );
           })}
+          </div>
         </nav>
 
         {/* 用户信息区域 */}
