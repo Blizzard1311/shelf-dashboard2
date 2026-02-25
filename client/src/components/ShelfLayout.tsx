@@ -120,11 +120,11 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
         </div>
 
         {/* 导航区域 */}
-        <nav className="flex-1 px-3 py-6 overflow-y-auto">
-          <p className="px-3 mb-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <nav className="flex-1 px-3 py-6 flex flex-col">
+          <p className="px-3 mb-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             功能模块
           </p>
-          <div className="space-y-3">
+          <div className="flex flex-col justify-around flex-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path;
