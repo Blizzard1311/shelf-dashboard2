@@ -12,7 +12,6 @@ import {
   LogOut,
   User,
   ChevronRight,
-  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -104,7 +103,23 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
               boxShadow: "0 4px 12px oklch(0.55 0.18 260 / 0.4)",
             }}
           >
-            <Package className="w-5 h-5 text-white" />
+            {/* 空间透视图标：三维货架透视效果 */}
+            <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+              {/* 后平面 */}
+              <rect x="7" y="4" width="12" height="9" rx="0.5" stroke="white" strokeWidth="1.2" strokeOpacity="0.5" fill="none"/>
+              {/* 前平面 */}
+              <rect x="3" y="10" width="12" height="9" rx="0.5" stroke="white" strokeWidth="1.4" fill="white" fillOpacity="0.15"/>
+              {/* 透视连接线 - 左上 */}
+              <line x1="3" y1="10" x2="7" y2="4" stroke="white" strokeWidth="1" strokeOpacity="0.7"/>
+              {/* 透视连接线 - 右上 */}
+              <line x1="15" y1="10" x2="19" y2="4" stroke="white" strokeWidth="1" strokeOpacity="0.7"/>
+              {/* 透视连接线 - 右下 */}
+              <line x1="15" y1="19" x2="19" y2="13" stroke="white" strokeWidth="1" strokeOpacity="0.7"/>
+              {/* 货架横隔板 - 前 */}
+              <line x1="3" y1="14" x2="15" y2="14" stroke="white" strokeWidth="1" strokeOpacity="0.8"/>
+              {/* 货架横隔板 - 后（透视缩短） */}
+              <line x1="7" y1="7.5" x2="19" y2="7.5" stroke="white" strokeWidth="0.8" strokeOpacity="0.4"/>
+            </svg>
           </div>
           <div className="min-w-0">
             <h1 className="text-sm font-bold text-foreground truncate">货架效率透析系统</h1>
@@ -120,11 +135,11 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
         </div>
 
         {/* 导航区域 */}
-        <nav className="flex-1 px-3 py-6 flex flex-col">
-          <p className="px-3 mb-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <nav className="flex-1 px-3 py-6 flex flex-col min-h-0">
+          <p className="px-3 mb-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex-shrink-0">
             功能模块
           </p>
-          <div className="flex flex-col justify-around flex-1">
+          <div className="flex flex-col justify-around flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path;
