@@ -1,0 +1,1 @@
+ALTER TABLE `shelf_data` ADD `grossProfit` text;

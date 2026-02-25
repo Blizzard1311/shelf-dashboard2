@@ -9,6 +9,7 @@ import {
   getShelfSummaryList,
   getShelfCodeList,
   getUploadSessions,
+  getShelfPlanogramData,
 } from "./db";
 
 export const appRouter = router({
@@ -58,6 +59,13 @@ export const appRouter = router({
     uploadSessions: publicProcedure.query(async () => {
       return getUploadSessions();
     }),
+
+    // 单货架棚格图数据
+    planogram: publicProcedure
+      .input(z.object({ sessionId: z.number(), shelfCode: z.string() }))
+      .query(async ({ input }) => {
+        return getShelfPlanogramData(input.sessionId, input.shelfCode);
+      }),
   }),
 });
 

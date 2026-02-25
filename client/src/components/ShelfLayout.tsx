@@ -31,7 +31,7 @@ const navItems = [
     key: "perspective",
     label: "货架透视",
     icon: BarChart3,
-    path: "/perspective",
+    path: "/shelf",
     gradient: "from-violet-500 to-purple-600",
     shadowColor: "oklch(0.55 0.18 300)",
     description: "数据可视化分析",

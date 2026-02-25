@@ -146,6 +146,7 @@ export async function getShelfSummaryList(sessionId: number) {
     .select({
       shelfCode: shelfData.shelfCode,
       totalSalesAmount: sql<number>`sum(cast(${shelfData.salesAmount} as decimal(18,2)))`,
+      totalGrossProfit: sql<number>`sum(cast(${shelfData.grossProfit} as decimal(18,2)))`,
       totalSalesQty: sql<number>`sum(${shelfData.salesQty})`,
       productCount: sql<number>`count(distinct ${shelfData.productCode})`,
       rowCount: sql<number>`count(*)`,
@@ -167,6 +168,32 @@ export async function getShelfCodeList(sessionId: number): Promise<string[]> {
     .where(eq(shelfData.sessionId, sessionId))
     .orderBy(shelfData.shelfCode);
   return rows.map(r => r.shelfCode);
+}
+
+/** 获取单货架所有储位明细（用于棚格图），按层数+储位编码排序 */
+export async function getShelfPlanogramData(sessionId: number, shelfCode: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: shelfData.id,
+      productCode: shelfData.productCode,
+      productName: shelfData.productName,
+      shelfLevel: shelfData.shelfLevel,
+      positionCode: shelfData.positionCode,
+      facingCount: shelfData.facingCount,
+      displayLevel: shelfData.displayLevel,
+      stackCount: shelfData.stackCount,
+      salesQty: shelfData.salesQty,
+      salesAmount: shelfData.salesAmount,
+      grossProfit: shelfData.grossProfit,
+    })
+    .from(shelfData)
+    .where(
+      sql`${shelfData.sessionId} = ${sessionId} AND ${shelfData.shelfCode} = ${shelfCode}`
+    )
+    .orderBy(shelfData.shelfLevel, sql`cast(${shelfData.positionCode} as unsigned)`);
+  return rows;
 }
 
 /** 获取上传批次列表 */

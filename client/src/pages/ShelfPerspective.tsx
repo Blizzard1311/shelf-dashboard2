@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
   BarChart3,
@@ -72,12 +73,14 @@ function StatCard({ title, value, subtitle, icon, color, bgColor }: StatCardProp
 interface ShelfCardProps {
   shelfCode: string;
   totalSalesAmount: number;
+  totalGrossProfit: number;
   totalSalesQty: number;
   productCount: number;
   rank: number;
+  onViewPlanogram?: () => void;
 }
 
-function ShelfCard({ shelfCode, totalSalesAmount, totalSalesQty, productCount, rank }: ShelfCardProps) {
+function ShelfCard({ shelfCode, totalSalesAmount, totalGrossProfit, totalSalesQty, productCount, rank, onViewPlanogram }: ShelfCardProps) {
   const colorSets = [
     { bg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", shadow: "rgba(102,126,234,0.35)" },
     { bg: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", shadow: "rgba(245,87,108,0.35)" },
@@ -127,6 +130,16 @@ function ShelfCard({ shelfCode, totalSalesAmount, totalSalesQty, productCount, r
         </p>
       </div>
 
+      {/* 销售毛利 */}
+      <div>
+        <p className="text-xs font-medium mb-0.5" style={{ color: "rgba(255,255,255,0.72)" }}>
+          销售毛利
+        </p>
+        <p className="text-xl font-bold" style={{ color: "white", textShadow: "0 1px 3px rgba(0,0,0,0.15)" }}>
+          ¥ {fmtAmount(totalGrossProfit)}
+        </p>
+      </div>
+
       {/* 底部统计 */}
       <div className="flex gap-4 mt-auto pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.2)" }}>
         <div>
@@ -141,6 +154,22 @@ function ShelfCard({ shelfCode, totalSalesAmount, totalSalesQty, productCount, r
             {fmtNumber(productCount)}
           </p>
         </div>
+        {onViewPlanogram && (
+          <div className="ml-auto">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onViewPlanogram(); }}
+              className="text-xs font-semibold px-2 py-1 rounded-lg transition-all"
+              style={{
+                background: "rgba(255,255,255,0.22)",
+                color: "white",
+                border: "1px solid rgba(255,255,255,0.3)",
+              }}
+            >
+              查看陈列图
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -281,6 +310,7 @@ function FilterDialog({ shelfCodes, selected, onConfirm, onClose }: FilterDialog
 export default function ShelfPerspective() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
+  const [, setLocation] = useLocation();
 
   // 获取最新 sessionId
   const { data: sessionData, isLoading: sessionLoading } =
@@ -471,9 +501,11 @@ export default function ShelfPerspective() {
                 key={shelf.shelfCode}
                 shelfCode={shelf.shelfCode}
                 totalSalesAmount={Number(shelf.totalSalesAmount)}
+                totalGrossProfit={Number((shelf as any).totalGrossProfit ?? 0)}
                 totalSalesQty={Number(shelf.totalSalesQty)}
                 productCount={Number(shelf.productCount)}
                 rank={idx}
+                onViewPlanogram={() => setLocation(`/planogram/${encodeURIComponent(shelf.shelfCode)}`)}
               />
             ))}
           </div>

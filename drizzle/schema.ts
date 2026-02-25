@@ -61,6 +61,7 @@ export const shelfData = mysqlTable("shelf_data", {
   // 销售数据
   salesQty: int("salesQty"),                                       // 销售数量
   salesAmount: text("salesAmount"),                                // 销售金额（text 保留精度）
+  grossProfit: text("grossProfit"),                                // 销售毛利（text 保留精度）
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

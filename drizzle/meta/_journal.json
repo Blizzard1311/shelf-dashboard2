@@ -15,6 +15,13 @@
       "when": 1772005737962,
       "tag": "0001_dark_mongu",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1772009926219,
+      "tag": "0002_confused_junta",
+      "breakpoints": true
     }
   ]
 }
