@@ -81,6 +81,7 @@ interface ShelfCardProps {
 }
 
 function ShelfCard({ shelfCode, totalSalesAmount, totalGrossProfit, totalSalesQty, productCount, rank, onViewPlanogram }: ShelfCardProps) {
+  const handleClick = () => { if (onViewPlanogram) onViewPlanogram(); };
   const colorSets = [
     { bg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", shadow: "rgba(102,126,234,0.35)" },
     { bg: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", shadow: "rgba(245,87,108,0.35)" },
@@ -97,7 +98,8 @@ function ShelfCard({ shelfCode, totalSalesAmount, totalGrossProfit, totalSalesQt
 
   return (
     <div
-      className="rounded-2xl p-5 flex flex-col gap-3 cursor-default select-none transition-all duration-200 hover:-translate-y-1 hover:scale-[1.02]"
+      className="rounded-2xl p-5 flex flex-col gap-3 cursor-pointer select-none transition-all duration-200 hover:-translate-y-1 hover:scale-[1.02]"
+      onClick={handleClick}
       style={{
         background: colorSet.bg,
         boxShadow: `0 8px 24px ${colorSet.shadow}, 0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.2)`,
@@ -149,27 +151,14 @@ function ShelfCard({ shelfCode, totalSalesAmount, totalGrossProfit, totalSalesQt
           </p>
         </div>
         <div>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>商品种数</p>
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>SKU</p>
           <p className="text-sm font-semibold" style={{ color: "white" }}>
             {fmtNumber(productCount)}
           </p>
         </div>
-        {onViewPlanogram && (
-          <div className="ml-auto">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onViewPlanogram(); }}
-              className="text-xs font-semibold px-2 py-1 rounded-lg transition-all"
-              style={{
-                background: "rgba(255,255,255,0.22)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.3)",
-              }}
-            >
-              查看陈列图
-            </button>
-          </div>
-        )}
+        <div className="ml-auto flex items-center" style={{ color: "rgba(255,255,255,0.6)" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
       </div>
     </div>
   );
