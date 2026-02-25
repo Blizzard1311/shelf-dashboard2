@@ -388,15 +388,15 @@ export default function ShelfPerspective() {
         <StatCard
           title="货架总数"
           value={isLoading ? "…" : fmtNumber(stats?.totalShelfCodes)}
-          subtitle="条货架"
+          subtitle="组"
           icon={<Package size={22} />}
           color="#4f46e5"
           bgColor="#eef2ff"
         />
         <StatCard
-          title="商品种数"
+          title="商品数量"
           value={isLoading ? "…" : fmtNumber(stats?.totalProductCodes)}
-          subtitle="个 SKU"
+          subtitle="SKU"
           icon={<ShoppingCart size={22} />}
           color="#0891b2"
           bgColor="#ecfeff"
@@ -437,14 +437,7 @@ export default function ShelfPerspective() {
             <h2 className="text-base font-bold text-gray-700">
               货架销售总览
             </h2>
-            {displayList.length > 0 && (
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-medium"
-                style={{ background: "#eef2ff", color: "#4f46e5" }}
-              >
-                {displayList.length} 条货架
-              </span>
-            )}
+
           </div>
           {isLoading && (
             <RefreshCw size={16} className="text-gray-400 animate-spin" />

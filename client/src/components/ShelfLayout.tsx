@@ -253,8 +253,8 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
             {navItems.map((item) =>
               location === item.path ? (
                 <div key={item.key} className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-foreground">{item.label}</span>
-                  <span className="hidden sm:inline text-xs text-muted-foreground">
+                  <span className="text-sm font-semibold text-foreground" style={{fontSize: '20px'}}>{item.label}</span>
+                  <span className="hidden sm:inline text-xs text-muted-foreground" style={{fontSize: '14px'}}>
                     — {item.description}
                   </span>
                 </div>
