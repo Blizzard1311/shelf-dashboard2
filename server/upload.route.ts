@@ -1,6 +1,11 @@
 import { Router } from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import {
+  createUploadSession,
+  insertShelfDataBatch,
+} from "./db";
+import type { InsertShelfData } from "../drizzle/schema";
 
 const router = Router();
 
@@ -20,13 +25,11 @@ export const TEMPLATE_FIELDS = [
   "单层层数",
   "销售数量",
   "销售金额",
-  "合计销售金额",
-  "合计销售毛利额",
 ];
 
 // 模版 CDN 地址
 const TEMPLATE_URL =
-  "https://files.manuscdn.com/user_upload_by_module/session_file/310070185010691470/ZjQMBrpExijIdzDj.xlsx";
+  "https://files.manuscdn.com/user_upload_by_module/session_file/310070185010691470/NuiLHRotMuJGsaNq.xlsx";
 
 // multer 内存存储（不写磁盘）
 const upload = multer({
@@ -53,8 +56,8 @@ router.get("/template-url", (_req, res) => {
   res.json({ url: TEMPLATE_URL, filename: "商品储位信息模版.xlsx" });
 });
 
-// POST /api/upload/parse — 解析上传文件
-router.post("/parse", upload.single("file"), (req, res) => {
+// POST /api/upload/parse — 解析上传文件并持久化到数据库
+router.post("/parse", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       res.status(400).json({ success: false, error: "未收到文件" });
@@ -99,7 +102,7 @@ router.post("/parse", upload.single("file"), (req, res) => {
       return;
     }
 
-    // 过滤空行
+    // 过滤空行（至少有一个字段有值）
     const validRows = rows.filter((row) =>
       TEMPLATE_FIELDS.some((f) => row[f] !== null && row[f] !== "")
     );
@@ -124,14 +127,51 @@ router.post("/parse", upload.single("file"), (req, res) => {
       }
     }
 
+    // 持久化到数据库
+    let sessionId: number | null = null;
+    try {
+      // 1. 创建上传批次记录
+      sessionId = await createUploadSession({
+        fileName: req.file.originalname,
+        totalRows: validRows.length,
+        shelfCount: shelfCodes.size,
+        productCount: productCodes.size,
+        uploadedBy: (req as any).user?.openId ?? null,
+      });
+
+      // 2. 批量插入明细行
+      const insertRows: InsertShelfData[] = validRows.map((row) => ({
+        sessionId: sessionId!,
+        category1: row["大类"] ? String(row["大类"]) : null,
+        category2: row["中类"] ? String(row["中类"]) : null,
+        category3: row["小类"] ? String(row["小类"]) : null,
+        category4: row["子类"] ? String(row["子类"]) : null,
+        productCode: String(row["商品编码"] ?? ""),
+        productName: row["商品名称"] ? String(row["商品名称"]) : null,
+        shelfCode: String(row["货架编码"] ?? ""),
+        shelfLevel: row["货架层数"] ? Number(row["货架层数"]) : null,
+        positionCode: row["储位编码"] ? String(row["储位编码"]) : null,
+        facingCount: row["陈列面数"] ? Number(row["陈列面数"]) : null,
+        displayLevel: row["陈列层数"] ? Number(row["陈列层数"]) : null,
+        stackCount: row["单层层数"] ? Number(row["单层层数"]) : null,
+        salesQty: row["销售数量"] ? Number(row["销售数量"]) : null,
+        salesAmount: row["销售金额"] !== null ? String(row["销售金额"]) : null,
+      }));
+
+      await insertShelfDataBatch(insertRows);
+    } catch (dbErr) {
+      console.error("[upload/parse] DB error:", dbErr);
+      // 数据库失败不阻断响应，仍返回解析结果
+    }
+
     res.json({
       success: true,
+      sessionId,
       summary: {
         totalRows: validRows.length,
         shelfCodeCount: shelfCodes.size,
         shelfCodes: Array.from(shelfCodes).sort(),
         productCodeCount: productCodes.size,
-        productCodes: Array.from(productCodes).sort(),
       },
       extraFields: extraFields.length > 0 ? extraFields : undefined,
     });

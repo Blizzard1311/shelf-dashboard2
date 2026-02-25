@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, InsertShelfData, InsertUploadSession, users, shelfData, uploadSessions } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,89 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ============ 货架数据相关查询 ============
+
+/** 创建上传批次记录 */
+export async function createUploadSession(data: Omit<InsertUploadSession, 'id' | 'createdAt'>) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const [result] = await db.insert(uploadSessions).values(data);
+  return (result as any).insertId as number;
+}
+
+/** 批量插入货架储位明细行 */
+export async function insertShelfDataBatch(rows: InsertShelfData[]) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  // 分批插入，每批 500 条
+  const BATCH = 500;
+  for (let i = 0; i < rows.length; i += BATCH) {
+    await db.insert(shelfData).values(rows.slice(i, i + BATCH));
+  }
+}
+
+/** 获取最新一次上传的 sessionId */
+export async function getLatestSessionId(): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select({ id: uploadSessions.id })
+    .from(uploadSessions)
+    .orderBy(desc(uploadSessions.createdAt))
+    .limit(1);
+  return rows.length > 0 ? rows[0].id : null;
+}
+
+/** 货架透视看板统计：基于最新 session */
+export async function getShelfDashboardStats(sessionId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select({
+      totalRows: sql<number>`count(*)`,
+      totalShelfCodes: sql<number>`count(distinct ${shelfData.shelfCode})`,
+      totalProductCodes: sql<number>`count(distinct ${shelfData.productCode})`,
+      totalSalesAmount: sql<number>`sum(cast(${shelfData.salesAmount} as decimal(18,2)))`,
+      totalSalesQty: sql<number>`sum(${shelfData.salesQty})`,
+    })
+    .from(shelfData)
+    .where(eq(shelfData.sessionId, sessionId));
+  return rows[0] ?? null;
+}
+
+/** 按货架编码汇总销售金额（用于货架方块卡片） */
+export async function getShelfSummaryList(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      shelfCode: shelfData.shelfCode,
+      totalSalesAmount: sql<number>`sum(cast(${shelfData.salesAmount} as decimal(18,2)))`,
+      totalSalesQty: sql<number>`sum(${shelfData.salesQty})`,
+      productCount: sql<number>`count(distinct ${shelfData.productCode})`,
+      rowCount: sql<number>`count(*)`,
+    })
+    .from(shelfData)
+    .where(eq(shelfData.sessionId, sessionId))
+    .groupBy(shelfData.shelfCode)
+    .orderBy(shelfData.shelfCode);
+  return rows;
+}
+
+/** 获取所有货架编码列表（用于筛选） */
+export async function getShelfCodeList(sessionId: number): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .selectDistinct({ shelfCode: shelfData.shelfCode })
+    .from(shelfData)
+    .where(eq(shelfData.sessionId, sessionId))
+    .orderBy(shelfData.shelfCode);
+  return rows.map(r => r.shelfCode);
+}
+
+/** 获取上传批次列表 */
+export async function getUploadSessions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(uploadSessions).orderBy(desc(uploadSessions.createdAt)).limit(10);
+}
