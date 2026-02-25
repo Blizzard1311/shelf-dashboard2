@@ -18,11 +18,15 @@ export const TEMPLATE_FIELDS = [
   "陈列面数",
   "陈列层数",
   "单层层数",
+  "销售数量",
+  "销售金额",
+  "合计销售金额",
+  "合计销售毛利额",
 ];
 
 // 模版 CDN 地址
 const TEMPLATE_URL =
-  "https://files.manuscdn.com/user_upload_by_module/session_file/310070185010691470/adNwTWEyBDIfQTSO.xlsx";
+  "https://files.manuscdn.com/user_upload_by_module/session_file/310070185010691470/ZjQMBrpExijIdzDj.xlsx";
 
 // multer 内存存储（不写磁盘）
 const upload = multer({
