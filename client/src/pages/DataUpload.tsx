@@ -244,7 +244,7 @@ export default function DataUpload() {
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
-            onClick={() => !selectedFile && fileInputRef.current?.click()}
+            onClick={() => { if (!selectedFile) fileInputRef.current?.click(); }}
             className={`
               relative border-2 border-dashed rounded-xl p-5 text-center transition-all duration-200
               ${isDragging
@@ -254,6 +254,7 @@ export default function DataUpload() {
                 : "border-border hover:border-teal-300 hover:bg-muted/30 cursor-pointer"
               }
             `}
+            style={{ position: "relative", zIndex: 0 }}
           >
             <input
               ref={fileInputRef}
@@ -288,12 +289,15 @@ export default function DataUpload() {
           </div>
 
           <button
-            onClick={handleUpload}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); handleUpload(); }}
             disabled={!selectedFile || uploading}
             className="w-full py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 mt-auto"
             style={{
               background: "linear-gradient(135deg, oklch(0.65 0.15 185), oklch(0.55 0.18 200))",
               boxShadow: "0 4px 14px oklch(0.65 0.15 185 / 0.4), inset 0 1px 0 oklch(1 0 0 / 0.15)",
+              position: "relative",
+              zIndex: 1,
             }}
           >
             {uploading ? (
