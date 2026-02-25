@@ -349,14 +349,8 @@ export default function ShelfPerspective() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* ── 页面标题 ── */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">货架透视</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            基于最新上传数据的货架销售汇总分析
-          </p>
-        </div>
+      {/* ── 顶部操作栏 ── */}
+      <div className="flex items-center justify-end flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           {selectedCodes.length > 0 && (
             <Badge

@@ -201,7 +201,7 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-foreground truncate">
+                <p className="text-sm font-semibold text-foreground truncate">
                   {user.name || user.email || "用户"}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
