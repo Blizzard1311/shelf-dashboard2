@@ -517,7 +517,7 @@ export default function ShelfPerspective() {
   return (
     <div className="flex flex-col gap-6">
       {/* ── 顶部操作栏 ── */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3" style={{paddingTop: '4px', paddingRight: '22px', paddingLeft: '24px', marginTop: '9px', marginBottom: '-10px'}}>
         {/* 大类筛选器 */}
         <div className="flex items-center gap-2 flex-wrap">
           {categoryList.length > 0 && (
