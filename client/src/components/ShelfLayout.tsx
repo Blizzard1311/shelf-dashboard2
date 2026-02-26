@@ -122,7 +122,7 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
             </svg>
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm font-bold text-foreground truncate">货架效率透析系统</h1>
+            <h1 className="text-sm font-bold text-foreground truncate" style={{fontSize: '20px'}}>货架效率透析系统</h1>
             <p className="text-xs text-muted-foreground truncate">内部数据管理系统</p>
           </div>
           {/* 移动端关闭按钮 */}
@@ -136,10 +136,10 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
 
         {/* 导航区域 */}
         <nav className="flex-1 px-3 py-6 flex flex-col min-h-0">
-          <p className="px-3 mb-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex-shrink-0">
+          <p className="px-3 mb-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex-shrink-0" style={{fontSize: '17px'}}>
             功能模块
           </p>
-          <div className="flex flex-col justify-around flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
+          <div className="flex flex-col justify-around flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin" style={{paddingTop: '16px', paddingBottom: '15px'}}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path;
