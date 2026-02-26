@@ -207,6 +207,16 @@ export default function Planogram() {
     return Array.from(map.entries()).sort((a: [number, SlotItem[]], b: [number, SlotItem[]]) => b[0] - a[0]);
   }, [items]);
 
+  // ── 计算每层总面数，找出最大层宽度 ──
+  const maxLevelFacings = useMemo(() => {
+    if (!levelGroups.length) return 0;
+    return Math.max(
+      ...levelGroups.map(([, levelItems]) =>
+        levelItems.reduce((sum, item) => sum + Math.max(1, item.facingCount ?? 1), 0)
+      )
+    );
+  }, [levelGroups]);
+
   // ── 汇总统计 ──
   const summary = useMemo(() => {
     const totalAmount = items.reduce((s, i) => s + Number(i.salesAmount ?? 0), 0);
@@ -326,63 +336,90 @@ export default function Planogram() {
               minWidth: "fit-content",
             }}
           >
-            {levelGroups.map(([level, levelItems]) => (
-              <div key={level} style={{ marginBottom: GAP * 2, display: "flex", alignItems: "stretch", gap: 8 }}>
-                {/* 层号标签 */}
-                <div
-                  style={{
-                    width: 36,
-                    minWidth: 36,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: "column",
-                    gap: 2,
-                  }}
-                >
-                  <span
+            {levelGroups.map(([level, levelItems]) => {
+              // 计算该层已占面数
+              const usedFacings = levelItems.reduce((sum, item) => sum + Math.max(1, item.facingCount ?? 1), 0);
+              const emptyFacings = maxLevelFacings - usedFacings;
+              return (
+                <div key={level} style={{ marginBottom: GAP * 2, display: "flex", alignItems: "stretch", gap: 8 }}>
+                  {/* 层号标签 */}
+                  <div
                     style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: "#6366f1",
-                      background: "#eef2ff",
-                      borderRadius: 6,
-                      padding: "2px 6px",
-                      whiteSpace: "nowrap",
+                      width: 36,
+                      minWidth: 36,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexDirection: "column",
+                      gap: 2,
                     }}
                   >
-                    第{level}层
-                  </span>
-                </div>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#6366f1",
+                        background: "#eef2ff",
+                        borderRadius: 6,
+                        padding: "2px 6px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      第{level}层
+                    </span>
+                  </div>
 
-                {/* 货架层隔板背景 */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    gap: GAP,
-                    alignItems: "flex-end",
-                    background: "linear-gradient(180deg, #e8edf5 0%, #dde3ee 100%)",
-                    borderRadius: 8,
-                    padding: "8px 10px 10px",
-                    border: "1px solid #c8d0e0",
-                    boxShadow: "inset 0 -3px 0 #b8c4d8",
-                    minHeight: UNIT_H + 20,
-                  }}
-                >
-                  {levelItems.map((item) => (
-                    <ProductCell
-                      key={item.id}
-                      item={item}
-                      isTopQty={maxQtyIds.has(item.id)}
-                      isTopAmount={maxAmountIds.has(item.id)}
-                      unitWidth={UNIT_W}
-                      unitHeight={UNIT_H}
-                    />
-                  ))}
+                  {/* 货架层隔板背景 */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      gap: GAP,
+                      alignItems: "flex-end",
+                      background: "linear-gradient(180deg, #e8edf5 0%, #dde3ee 100%)",
+                      borderRadius: 8,
+                      padding: "8px 10px 10px",
+                      border: "1px solid #c8d0e0",
+                      boxShadow: "inset 0 -3px 0 #b8c4d8",
+                      minHeight: UNIT_H + 20,
+                      // 固定宽度：最大层面数 × 单位宽 + 间距
+                      width: maxLevelFacings * UNIT_W + (maxLevelFacings - 1) * GAP + 20,
+                      minWidth: maxLevelFacings * UNIT_W + (maxLevelFacings - 1) * GAP + 20,
+                    }}
+                  >
+                    {levelItems.map((item) => (
+                      <ProductCell
+                        key={item.id}
+                        item={item}
+                        isTopQty={maxQtyIds.has(item.id)}
+                        isTopAmount={maxAmountIds.has(item.id)}
+                        unitWidth={UNIT_W}
+                        unitHeight={UNIT_H}
+                      />
+                    ))}
+                    {/* 右侧空白占位块，补齐到最大层宽度 */}
+                    {emptyFacings > 0 && (
+                      <div
+                        style={{
+                          width: emptyFacings * UNIT_W + (emptyFacings - 1) * GAP,
+                          height: UNIT_H,
+                          minWidth: emptyFacings * UNIT_W + (emptyFacings - 1) * GAP,
+                          borderRadius: 6,
+                          background: "rgba(203,213,225,0.3)",
+                          border: "2px dashed #cbd5e1",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <span style={{ fontSize: 10, color: "#94a3b8", fontStyle: "italic" }}>空位</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* 货架底座 */}
             <div
