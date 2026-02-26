@@ -4,6 +4,8 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { TenantProvider, useTenant } from "./contexts/TenantContext";
+import { useAuth } from "@/_core/hooks/useAuth";
 import ShelfLayout from "./components/ShelfLayout";
 import Dashboard from "./pages/Dashboard";
 import DataUpload from "./pages/DataUpload";
@@ -12,8 +14,12 @@ import GridChart from "./pages/GridChart";
 import Planogram from "./pages/Planogram";
 import VitalityDetail from "./pages/VitalityDetail";
 import AdjustmentPlan from "./pages/AdjustmentPlan";
+import TenantLogin from "./pages/TenantLogin";
+import LicenseManage from "./pages/LicenseManage";
+import TenantDataManage from "./pages/TenantDataManage";
 
-function Router() {
+/** 主路由：需要认证（管理员 OAuth 或 租户序列号） */
+function AuthenticatedRouter() {
   return (
     <Switch>
       {/* 棚格图页面独立展示，不使用侧边栏布局 */}
@@ -30,6 +36,9 @@ function Router() {
             <Route path="/upload" component={DataUpload} />
             <Route path="/shelf" component={ShelfPerspective} />
             <Route path="/grid" component={GridChart} />
+            {/* 管理员页面 */}
+            <Route path="/admin/license" component={LicenseManage} />
+            <Route path="/admin/tenants" component={TenantDataManage} />
             <Route path="/404" component={NotFound} />
             <Route component={NotFound} />
           </Switch>
@@ -39,14 +48,42 @@ function Router() {
   );
 }
 
+/** 认证门卫：检查是否已登录（管理员 or 租户） */
+function AuthGate() {
+  const { user, loading: authLoading } = useAuth();
+  const { tenant, loading: tenantLoading } = useTenant();
+
+  // 两个认证源都在加载中
+  if (authLoading || tenantLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 管理员已登录（Manus OAuth）或 租户已登录（序列号）
+  if (user || tenant) {
+    return <AuthenticatedRouter />;
+  }
+
+  // 未登录：显示序列号登录页
+  return <TenantLogin />;
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <TenantProvider>
+          <TooltipProvider>
+            <Toaster />
+            <AuthGate />
+          </TooltipProvider>
+        </TenantProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

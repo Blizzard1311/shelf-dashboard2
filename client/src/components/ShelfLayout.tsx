@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useTenant } from "@/contexts/TenantContext";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import {
@@ -12,12 +13,26 @@ import {
   LogOut,
   User,
   ChevronRight,
+  KeyRound,
+  Shield,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 
-const navItems = [
+type NavItem = {
+  key: string;
+  label: string;
+  icon: typeof Upload;
+  path: string;
+  gradient: string;
+  shadowColor: string;
+  description: string;
+  adminOnly?: boolean;
+};
+
+const baseNavItems: NavItem[] = [
   {
     key: "upload",
     label: "数据上传",
@@ -47,6 +62,29 @@ const navItems = [
   },
 ];
 
+const adminNavItems: NavItem[] = [
+  {
+    key: "license",
+    label: "序列号管理",
+    icon: KeyRound,
+    path: "/admin/license",
+    gradient: "from-amber-500 to-orange-600",
+    shadowColor: "oklch(0.65 0.18 70)",
+    description: "生成与管理授权序列号",
+    adminOnly: true,
+  },
+  {
+    key: "tenants",
+    label: "租户数据",
+    icon: Users,
+    path: "/admin/tenants",
+    gradient: "from-rose-500 to-pink-600",
+    shadowColor: "oklch(0.60 0.18 10)",
+    description: "查看与导出租户数据",
+    adminOnly: true,
+  },
+];
+
 interface ShelfLayoutProps {
   children: React.ReactNode;
 }
@@ -55,6 +93,7 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
+  const { tenant, logout: tenantLogout } = useTenant();
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
       window.location.href = "/";
@@ -65,11 +104,25 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
     logoutMutation.mutate();
   };
 
+  const handleTenantLogout = async () => {
+    await tenantLogout();
+    window.location.href = "/";
+  };
+
+  const isAdmin = isAuthenticated && user?.role === 'admin';
+
+  // 根据角色动态生成导航项
+  const navItems: NavItem[] = isAdmin
+    ? [...baseNavItems, ...adminNavItems]
+    : baseNavItems;
+
   const userInitial = user?.name
     ? user.name.charAt(0).toUpperCase()
     : user?.email
     ? user.email.charAt(0).toUpperCase()
-    : "U";
+    : tenant?.displayName
+    ? tenant.displayName.charAt(0).toUpperCase()
+    : "T";
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -140,12 +193,21 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
             功能模块
           </p>
           <div className="flex flex-col justify-around flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin" style={{paddingTop: '16px', paddingBottom: '15px'}}>
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = location === item.path;
+            // 在管理员导航项前添加分隔线
+            const showAdminDivider = item.adminOnly && (index === 0 || !navItems[index - 1]?.adminOnly);
 
             return (
-              <Link key={item.key} href={item.path}>
+              <div key={item.key}>
+                {showAdminDivider && (
+                  <p className="px-3 mt-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    <Shield className="w-3 h-3" />
+                    管理功能
+                  </p>
+                )}
+              <Link href={item.path}>
                 <button
                   className={`
                     nav-btn-3d w-full flex items-center gap-3 px-4 py-3 rounded-xl
@@ -181,10 +243,27 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
                   )}
                 </button>
               </Link>
+              </div>
             );
           })}
           </div>
         </nav>
+
+        {/* 租户使用情况提示 */}
+        {tenant && !isAdmin && (
+          <div className="px-3 py-2 border-t border-border">
+            <div className="px-3 py-2 rounded-lg bg-blue-50 text-xs text-blue-700">
+              <div className="flex items-center gap-1 mb-1">
+                <KeyRound className="w-3 h-3" />
+                <span className="font-medium">授权信息</span>
+              </div>
+              <p>已用上传：{tenant.usedUploads} / {tenant.maxUploads === 0 ? '无限' : tenant.maxUploads} 次</p>
+              {tenant.expiresAt && (
+                <p>到期时间：{new Date(tenant.expiresAt).toLocaleDateString('zh-CN')}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 用户信息区域 */}
         <div className="px-3 py-4 border-t border-border">
@@ -204,12 +283,42 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
                 <p className="text-sm font-semibold text-foreground truncate">
                   {user.name || user.email || "用户"}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                  <Shield className="w-3 h-3" />
                   {user.role === "admin" ? "管理员" : "普通用户"}
                 </p>
               </div>
               <button
                 onClick={handleLogout}
+                className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors flex-shrink-0"
+                title="退出登录"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : tenant ? (
+            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/50">
+              <Avatar className="w-8 h-8 flex-shrink-0">
+                <AvatarFallback
+                  className="text-xs font-semibold text-white"
+                  style={{
+                    background: "linear-gradient(135deg, oklch(0.65 0.15 185), oklch(0.55 0.18 200))",
+                  }}
+                >
+                  {userInitial}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {tenant.displayName || '租户'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                  <KeyRound className="w-3 h-3" />
+                  序列号用户
+                </p>
+              </div>
+              <button
+                onClick={handleTenantLogout}
                 className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors flex-shrink-0"
                 title="退出登录"
               >
@@ -266,11 +375,14 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
           </div>
 
           {/* 右侧用户信息（桌面端） */}
-          {isAuthenticated && user && (
+          {(isAuthenticated && user) ? (
             <div className="hidden lg:flex items-center gap-2">
               <span className="text-xs text-muted-foreground">
                 {user.name || user.email}
               </span>
+              {isAdmin && (
+                <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">管理员</span>
+              )}
               <Avatar className="w-7 h-7">
                 <AvatarFallback
                   className="text-xs font-semibold text-white"
@@ -282,7 +394,23 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
                 </AvatarFallback>
               </Avatar>
             </div>
-          )}
+          ) : tenant ? (
+            <div className="hidden lg:flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {tenant.displayName || tenant.licenseKey}
+              </span>
+              <Avatar className="w-7 h-7">
+                <AvatarFallback
+                  className="text-xs font-semibold text-white"
+                  style={{
+                    background: "linear-gradient(135deg, oklch(0.65 0.15 185), oklch(0.55 0.18 200))",
+                  }}
+                >
+                  {userInitial}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          ) : null}
         </header>
 
         {/* 页面内容 */}

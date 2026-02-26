@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import uploadRouter from "../upload.route";
+import tenantAuthRouter from "../tenant-auth";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -38,6 +39,8 @@ async function startServer() {
   registerOAuthRoutes(app);
   // File upload routes
   app.use("/api/upload", uploadRouter);
+  // Tenant auth routes (license key login)
+  app.use("/api/tenant", tenantAuthRouter);
   // tRPC API
   app.use(
     "/api/trpc",

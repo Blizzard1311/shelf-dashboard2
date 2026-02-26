@@ -4,8 +4,12 @@ import * as XLSX from "xlsx";
 import {
   createUploadSession,
   insertShelfDataBatch,
+  getTenantById,
+  canTenantUpload,
+  incrementTenantUploads,
 } from "./db";
 import type { InsertShelfData } from "../drizzle/schema";
+import { extractTenantFromRequest } from "./tenant-auth";
 
 const router = Router();
 
@@ -128,6 +132,26 @@ router.post("/parse", upload.single("file"), async (req, res) => {
       }
     }
 
+    // 提取租户信息
+    let tenantId: number | null = null;
+    try {
+      const tenantInfo = await extractTenantFromRequest(req);
+      if (tenantInfo) {
+        tenantId = tenantInfo.tenantId;
+        // 检查租户是否还能上传
+        const tenant = await getTenantById(tenantId);
+        if (tenant) {
+          const uploadCheck = canTenantUpload(tenant);
+          if (!uploadCheck.canUpload) {
+            res.status(403).json({ success: false, error: uploadCheck.reason });
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      // 非租户上传，继续
+    }
+
     // 持久化到数据库
     let sessionId: number | null = null;
     try {
@@ -138,11 +162,13 @@ router.post("/parse", upload.single("file"), async (req, res) => {
         shelfCount: shelfCodes.size,
         productCount: productCodes.size,
         uploadedBy: (req as any).user?.openId ?? null,
+        tenantId,
       });
 
       // 2. 批量插入明细行
       const insertRows: InsertShelfData[] = validRows.map((row) => ({
         sessionId: sessionId!,
+        tenantId,
         category1: row["大类"] ? String(row["大类"]) : null,
         category2: row["中类"] ? String(row["中类"]) : null,
         category3: row["小类"] ? String(row["小类"]) : null,
@@ -161,6 +187,11 @@ router.post("/parse", upload.single("file"), async (req, res) => {
       }));
 
       await insertShelfDataBatch(insertRows);
+
+      // 3. 租户上传次数 +1
+      if (tenantId) {
+        await incrementTenantUploads(tenantId);
+      }
     } catch (dbErr) {
       console.error("[upload/parse] DB error:", dbErr);
       // 数据库失败不阻断响应，仍返回解析结果

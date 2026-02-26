@@ -1,6 +1,6 @@
 import { eq, desc, sql, and, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, InsertShelfData, InsertUploadSession, users, shelfData, uploadSessions } from "../drizzle/schema";
+import { InsertUser, InsertShelfData, InsertUploadSession, users, shelfData, uploadSessions, licenseKeys, tenants, type LicenseKey, type Tenant, type InsertLicenseKey, type InsertTenant } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -487,4 +487,177 @@ export async function getShelfSummaryListPaged(
   }));
 
   return { rows: enrichedRows, total };
+}
+
+// ============ 序列号 & 租户管理 ============
+
+/** 生成随机序列号：SH-XXXX-XXXX-XXXX 格式 */
+export function generateLicenseKeyString(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 排除易混淆字符 I/O/0/1
+  const segment = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return `SH-${segment()}-${segment()}-${segment()}`;
+}
+
+/** 创建序列号 */
+export async function createLicenseKey(data: { maxUploads: number; validDays: number; note?: string }): Promise<LicenseKey> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const key = generateLicenseKeyString();
+  await db.insert(licenseKeys).values({
+    key,
+    maxUploads: data.maxUploads,
+    validDays: data.validDays,
+    note: data.note ?? null,
+  });
+  const rows = await db.select().from(licenseKeys).where(eq(licenseKeys.key, key)).limit(1);
+  return rows[0];
+}
+
+/** 获取所有序列号列表 */
+export async function getLicenseKeyList(): Promise<LicenseKey[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(licenseKeys).orderBy(desc(licenseKeys.createdAt));
+}
+
+/** 停用序列号 */
+export async function disableLicenseKey(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(licenseKeys).set({ status: 'disabled' }).where(eq(licenseKeys.id, id));
+  // 同时停用关联的租户
+  const relatedTenants = await db.select().from(tenants).where(eq(tenants.licenseKeyId, id));
+  for (const t of relatedTenants) {
+    await db.update(tenants).set({ status: 'disabled' }).where(eq(tenants.id, t.id));
+  }
+}
+
+/** 通过序列号字符串查找序列号记录 */
+export async function getLicenseKeyByKey(key: string): Promise<LicenseKey | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(licenseKeys).where(eq(licenseKeys.key, key.trim().toUpperCase())).limit(1);
+  return rows.length > 0 ? rows[0] : null;
+}
+
+/** 通过序列号查找关联的租户 */
+export async function getTenantByLicenseKeyId(licenseKeyId: number): Promise<Tenant | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(tenants).where(eq(tenants.licenseKeyId, licenseKeyId)).limit(1);
+  return rows.length > 0 ? rows[0] : null;
+}
+
+/** 激活序列号：创建租户记录 */
+export async function activateLicenseKey(license: LicenseKey, displayName?: string): Promise<Tenant> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  const now = new Date();
+  const expiresAt = license.validDays > 0
+    ? new Date(now.getTime() + license.validDays * 24 * 60 * 60 * 1000)
+    : null;
+
+  // 更新序列号状态为 used
+  await db.update(licenseKeys).set({ status: 'used' }).where(eq(licenseKeys.id, license.id));
+
+  // 创建租户
+  await db.insert(tenants).values({
+    licenseKeyId: license.id,
+    licenseKey: license.key,
+    displayName: displayName || null,
+    usedUploads: 0,
+    maxUploads: license.maxUploads,
+    activatedAt: now,
+    expiresAt,
+  });
+
+  const rows = await db.select().from(tenants).where(eq(tenants.licenseKeyId, license.id)).limit(1);
+  return rows[0];
+}
+
+/** 获取租户详情 */
+export async function getTenantById(id: number): Promise<Tenant | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(tenants).where(eq(tenants.id, id)).limit(1);
+  return rows.length > 0 ? rows[0] : null;
+}
+
+/** 检查租户是否有效（未过期、未停用、上传次数未超限） */
+export function isTenantValid(tenant: Tenant): { valid: boolean; reason?: string } {
+  if (tenant.status === 'disabled') {
+    return { valid: false, reason: '该序列号已被停用' };
+  }
+  if (tenant.status === 'expired') {
+    return { valid: false, reason: '该序列号已过期' };
+  }
+  if (tenant.expiresAt && new Date() > tenant.expiresAt) {
+    return { valid: false, reason: '该序列号已过期' };
+  }
+  return { valid: true };
+}
+
+/** 检查租户是否还能上传 */
+export function canTenantUpload(tenant: Tenant): { canUpload: boolean; reason?: string } {
+  const validity = isTenantValid(tenant);
+  if (!validity.valid) return { canUpload: false, reason: validity.reason };
+  if (tenant.maxUploads > 0 && tenant.usedUploads >= tenant.maxUploads) {
+    return { canUpload: false, reason: `上传次数已达上限（${tenant.maxUploads}次）` };
+  }
+  return { canUpload: true };
+}
+
+/** 租户上传次数 +1 */
+export async function incrementTenantUploads(tenantId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(tenants).set({
+    usedUploads: sql`${tenants.usedUploads} + 1`,
+  }).where(eq(tenants.id, tenantId));
+}
+
+/** 获取所有租户列表 */
+export async function getTenantList(): Promise<Tenant[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tenants).orderBy(desc(tenants.createdAt));
+}
+
+/** 获取租户最新 sessionId */
+export async function getLatestSessionIdForTenant(tenantId: number): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select({ id: uploadSessions.id })
+    .from(uploadSessions)
+    .where(eq(uploadSessions.tenantId, tenantId))
+    .orderBy(desc(uploadSessions.createdAt))
+    .limit(1);
+  return rows.length > 0 ? rows[0].id : null;
+}
+
+/** 获取租户的所有 shelf_data（用于管理员导出） */
+export async function getTenantShelfData(tenantId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  // 获取该租户最新的 sessionId
+  const sessionId = await getLatestSessionIdForTenant(tenantId);
+  if (!sessionId) return [];
+  return db.select().from(shelfData).where(
+    and(eq(shelfData.sessionId, sessionId), eq(shelfData.tenantId, tenantId))
+  );
+}
+
+/** 自动过期检查：将已过期的租户标记为 expired */
+export async function expireOverdueTenants(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const now = new Date();
+  const result = await db.update(tenants).set({ status: 'expired' }).where(
+    and(
+      eq(tenants.status, 'active'),
+      sql`${tenants.expiresAt} IS NOT NULL AND ${tenants.expiresAt} < ${now}`
+    )
+  );
+  return (result as any)[0]?.affectedRows ?? 0;
 }

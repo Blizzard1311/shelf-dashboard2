@@ -1,17 +1,10 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { bigint, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
+ * Core user table backing auth flow (管理员通过 Manus OAuth 登录).
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -25,9 +18,62 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// ─────────────────────────────────────────────
+// 授权序列号表
+// ─────────────────────────────────────────────
+export const licenseKeys = mysqlTable("license_keys", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 序列号字符串，如 SH-A3X9-K7M2-P5Q1 */
+  key: varchar("licenseKey", { length: 32 }).notNull().unique(),
+  /** 上传次数上限：3 / 10 / 0（0 表示无限制） */
+  maxUploads: int("maxUploads").notNull().default(3),
+  /** 有效天数：30 / 90 / 0（0 表示无限制） */
+  validDays: int("validDays").notNull().default(30),
+  /** 备注（标记给了谁/哪个门店） */
+  note: text("note"),
+  /** 状态：active=可用, used=已激活, disabled=已停用 */
+  status: mysqlEnum("status", ["active", "used", "disabled"]).default("active").notNull(),
+  /** 创建时间 */
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type LicenseKey = typeof licenseKeys.$inferSelect;
+export type InsertLicenseKey = typeof licenseKeys.$inferInsert;
+
+// ─────────────────────────────────────────────
+// 租户表（通过序列号激活后创建）
+// ─────────────────────────────────────────────
+export const tenants = mysqlTable("tenants", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 关联的序列号 ID */
+  licenseKeyId: int("licenseKeyId").notNull(),
+  /** 序列号原文（冗余存储，方便查询展示） */
+  licenseKey: varchar("licenseKey", { length: 32 }).notNull(),
+  /** 租户显示名称（可选，激活时可设置） */
+  displayName: varchar("displayName", { length: 100 }),
+  /** 已使用上传次数 */
+  usedUploads: int("usedUploads").notNull().default(0),
+  /** 上传次数上限（从序列号继承） */
+  maxUploads: int("maxUploads").notNull().default(3),
+  /** 激活时间 */
+  activatedAt: timestamp("activatedAt").defaultNow().notNull(),
+  /** 过期时间（激活时间 + validDays，null 表示永不过期） */
+  expiresAt: timestamp("expiresAt"),
+  /** 状态：active=活跃, expired=已过期, disabled=已停用 */
+  status: mysqlEnum("tenantStatus", ["active", "expired", "disabled"]).default("active").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Tenant = typeof tenants.$inferSelect;
+export type InsertTenant = typeof tenants.$inferInsert;
+
+// ─────────────────────────────────────────────
 // 上传批次表：记录每次上传的元信息
+// ─────────────────────────────────────────────
 export const uploadSessions = mysqlTable("upload_sessions", {
   id: int("id").autoincrement().primaryKey(),
+  /** 关联租户 ID（null 表示管理员上传的历史数据） */
+  tenantId: int("tenantId"),
   fileName: varchar("fileName", { length: 255 }).notNull(),
   totalRows: int("totalRows").notNull().default(0),
   shelfCount: int("shelfCount").notNull().default(0),
@@ -39,10 +85,14 @@ export const uploadSessions = mysqlTable("upload_sessions", {
 export type UploadSession = typeof uploadSessions.$inferSelect;
 export type InsertUploadSession = typeof uploadSessions.$inferInsert;
 
+// ─────────────────────────────────────────────
 // 货架储位数据表：存储每次上传的明细行
+// ─────────────────────────────────────────────
 export const shelfData = mysqlTable("shelf_data", {
   id: int("id").autoincrement().primaryKey(),
   sessionId: int("sessionId").notNull(),
+  /** 关联租户 ID（null 表示管理员上传的历史数据） */
+  tenantId: int("tenantId"),
   // 品类维度
   category1: varchar("category1", { length: 100 }),  // 大类
   category2: varchar("category2", { length: 100 }),  // 中类

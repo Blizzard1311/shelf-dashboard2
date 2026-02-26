@@ -1,7 +1,8 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, TENANT_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, router, adminProcedure } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   getLatestSessionId,
@@ -17,29 +18,109 @@ import {
   getCategoryEfficiencyList,
   getShelfProductEfficiency,
   getSummaryStats,
+  // 序列号 & 租户
+  createLicenseKey,
+  getLicenseKeyList,
+  disableLicenseKey,
+  getTenantList,
+  getTenantById,
+  getLatestSessionIdForTenant,
+  getTenantShelfData,
+  expireOverdueTenants,
 } from "./db";
 
+/**
+ * 获取当前请求的有效 sessionId：
+ * - 租户：取该租户最新的 sessionId
+ * - 管理员：取全局最新（或指定租户的）sessionId
+ * - 未登录：取全局最新
+ */
+async function resolveSessionId(ctx: { user: any; tenant: any }, overrideTenantId?: number): Promise<number | null> {
+  // 管理员查看指定租户数据
+  if (overrideTenantId && ctx.user?.role === 'admin') {
+    return getLatestSessionIdForTenant(overrideTenantId);
+  }
+  // 租户登录
+  if (ctx.tenant?.tenantId) {
+    return getLatestSessionIdForTenant(ctx.tenant.tenantId);
+  }
+  // 管理员或未登录：全局最新
+  return getLatestSessionId();
+}
+
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
+      ctx.res.clearCookie(TENANT_COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      return { success: true } as const;
     }),
   }),
 
-  // 货架透视相关接口
-  shelf: router({
-    // 获取最新一次上传的 sessionId
-    latestSession: publicProcedure.query(async () => {
-      const sessionId = await getLatestSessionId();
-      return { sessionId };
+  // ─── 序列号管理（管理员专用） ───
+  license: router({
+    // 生成序列号
+    create: adminProcedure
+      .input(z.object({
+        maxUploads: z.number().min(0).default(3),   // 0=无限制
+        validDays: z.number().min(0).default(30),   // 0=无限制
+        note: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return createLicenseKey(input);
+      }),
+
+    // 序列号列表
+    list: adminProcedure.query(async () => {
+      await expireOverdueTenants();
+      return getLicenseKeyList();
     }),
+
+    // 停用序列号
+    disable: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await disableLicenseKey(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ─── 租户管理（管理员专用） ───
+  tenantAdmin: router({
+    // 租户列表
+    list: adminProcedure.query(async () => {
+      await expireOverdueTenants();
+      return getTenantList();
+    }),
+
+    // 查看指定租户的最新 sessionId
+    latestSession: adminProcedure
+      .input(z.object({ tenantId: z.number() }))
+      .query(async ({ input }) => {
+        const sessionId = await getLatestSessionIdForTenant(input.tenantId);
+        return { sessionId };
+      }),
+
+    // 导出租户数据（返回原始行，前端生成 Excel）
+    exportData: adminProcedure
+      .input(z.object({ tenantId: z.number() }))
+      .query(async ({ input }) => {
+        return getTenantShelfData(input.tenantId);
+      }),
+  }),
+
+  // ─── 货架透视相关接口（支持租户隔离） ───
+  shelf: router({
+    // 获取最新一次上传的 sessionId（租户隔离）
+    latestSession: publicProcedure
+      .input(z.object({ tenantId: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        const sessionId = await resolveSessionId(ctx, input?.tenantId);
+        return { sessionId };
+      }),
 
     // 看板统计数据
     dashboardStats: publicProcedure
