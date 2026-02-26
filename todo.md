@@ -123,3 +123,6 @@
 - [x] Excel导出：Sheet1调整任务总览
 - [x] Excel导出：Sheet2效率诊断依据
 - [x] Excel导出：Sheet3 0动销商品清单
+## Bug 修复（2026-02-26）
+- [x] 修复 AdjustmentPlan 页面 data 参数解析错误（base64+中文解码不匹配，修复 decodeURIComponent+escape 解码链）
+- [x] 修复页面刷新过于频繁的问题（QueryClient 添加 staleTime=5min + refetchOnWindowFocus=false）
