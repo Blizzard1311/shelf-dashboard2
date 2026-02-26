@@ -1,0 +1,66 @@
+{
+  "query": "SELECT id, fileName, totalRows, tenantId, uploadedBy, createdAt FROM upload_sessions ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute SELECT id, fileName, totalRows, tenantId, uploadedBy, createdAt FROM upload_sessions ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "90002",
+      "fileName": "éæºçæ_å®æç.xlsx",
+      "totalRows": "600",
+      "tenantId": "1",
+      "uploadedBy": "NULL",
+      "createdAt": "2026-02-26 08:39:58"
+    },
+    {
+      "id": "90001",
+      "fileName": "éæºçæ_å®æç.xlsx",
+      "totalRows": "600",
+      "tenantId": "1",
+      "uploadedBy": "NULL",
+      "createdAt": "2026-02-26 08:39:43"
+    },
+    {
+      "id": "60001",
+      "fileName": "éæºçæ_å®æç.xlsx",
+      "totalRows": "600",
+      "tenantId": "NULL",
+      "uploadedBy": "NULL",
+      "createdAt": "2026-02-26 06:00:17"
+    },
+    {
+      "id": "30001",
+      "fileName": "éæºçæ_å®æç.xlsx",
+      "totalRows": "600",
+      "tenantId": "NULL",
+      "uploadedBy": "NULL",
+      "createdAt": "2026-02-26 05:39:52"
+    },
+    {
+      "id": "3",
+      "fileName": "éæºçæ_å®æç.xlsx",
+      "totalRows": "120",
+      "tenantId": "NULL",
+      "uploadedBy": "NULL",
+      "createdAt": "2026-02-25 09:22:20"
+    },
+    {
+      "id": "2",
+      "fileName": "éæºçæ_å®æç.xlsx",
+      "totalRows": "120",
+      "tenantId": "NULL",
+      "uploadedBy": "NULL",
+      "createdAt": "2026-02-25 08:35:01"
+    },
+    {
+      "id": "1",
+      "fileName": "éæºçæ.xlsx",
+      "totalRows": "16",
+      "tenantId": "NULL",
+      "uploadedBy": "NULL",
+      "createdAt": "2026-02-25 08:33:40"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfileName\ttotalRows\ttenantId\tuploadedBy\tcreatedAt\n90002\téæºçæ_å®æç.xlsx\t600\t1\tNULL\t2026-02-26 08:39:58\n90001\téæºçæ_å®æç.xlsx\t600\t1\tNULL\t2026-02-26 08:39:43\n60001\téæºçæ_å®æç.xlsx\t600\tNULL\tNULL\t2026-02-26 06:00:17\n30001\téæºçæ_å®æç.xlsx\t600\tNULL\tNULL\t2026-02-26 05:39:52\n3\téæºçæ_å®æç.xlsx\t120\tNULL\tNULL\t2026-02-25 09:22:20\n2\téæºçæ_å®æç.xlsx\t120\tNULL\tNULL\t2026-02-25 08:35:01\n1\téæºçæ.xlsx\t16\tNULL\tNULL\t2026-02-25 08:33:40\n",
+  "stderr": "",
+  "execution_time_ms": 1630
+}
