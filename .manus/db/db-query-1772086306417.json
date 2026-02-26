@@ -1,0 +1,59 @@
+{
+  "query": "SELECT shelfCode, shelfLevel, COUNT(*) as items, SUM(facingCount) as total_facings, MAX(facingCount) as max_facing FROM shelf_data WHERE shelfCode = '食品1' AND sessionId = (SELECT MAX(id) FROM upload_sessions) GROUP BY shelfCode, shelfLevel ORDER BY shelfLevel;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute SELECT shelfCode, shelfLevel, COUNT(*) as items, SUM(facingCount) as total_facings, MAX(facingCount) as max_facing FROM shelf_data WHERE shelfCode = '食品1' AND sessionId = (SELECT MAX(id) FROM upload_sessions) GROUP BY shelfCode, shelfLevel ORDER BY shelfLevel;",
+  "rows": [
+    {
+      "shelfCode": "食品1",
+      "shelfLevel": "1",
+      "items": "5",
+      "total_facings": "10",
+      "max_facing": "3"
+    },
+    {
+      "shelfCode": "食品1",
+      "shelfLevel": "2",
+      "items": "4",
+      "total_facings": "10",
+      "max_facing": "3"
+    },
+    {
+      "shelfCode": "食品1",
+      "shelfLevel": "3",
+      "items": "4",
+      "total_facings": "7",
+      "max_facing": "3"
+    },
+    {
+      "shelfCode": "食品1",
+      "shelfLevel": "4",
+      "items": "4",
+      "total_facings": "8",
+      "max_facing": "3"
+    },
+    {
+      "shelfCode": "食品1",
+      "shelfLevel": "5",
+      "items": "4",
+      "total_facings": "7",
+      "max_facing": "3"
+    },
+    {
+      "shelfCode": "食品1",
+      "shelfLevel": "6",
+      "items": "5",
+      "total_facings": "12",
+      "max_facing": "3"
+    },
+    {
+      "shelfCode": "食品1",
+      "shelfLevel": "7",
+      "items": "4",
+      "total_facings": "7",
+      "max_facing": "3"
+    }
+  ],
+  "messages": [],
+  "stdout": "shelfCode\tshelfLevel\titems\ttotal_facings\tmax_facing\n食品1\t1\t5\t10\t3\n食品1\t2\t4\t10\t3\n食品1\t3\t4\t7\t3\n食品1\t4\t4\t8\t3\n食品1\t5\t4\t7\t3\n食品1\t6\t5\t12\t3\n食品1\t7\t4\t7\t3\n",
+  "stderr": "",
+  "execution_time_ms": 1715
+}

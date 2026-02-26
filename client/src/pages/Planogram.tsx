@@ -248,7 +248,7 @@ export default function Planogram() {
     return { totalQty, productCount, facingActivityRate, zeroSalesSkus, topProduct };
   }, [items]);
 
-  // 自适应方块尺寸
+  // 自适应方块尺寸：ref 挂在始终存在的外层容器
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -257,36 +257,40 @@ export default function Planogram() {
     if (!el) return;
     const obs = new ResizeObserver(entries => {
       const w = entries[0]?.contentRect.width ?? 0;
-      setContainerWidth(w);
+      if (w > 0) setContainerWidth(w);
     });
     obs.observe(el);
-    setContainerWidth(el.clientWidth);
+    if (el.clientWidth > 0) setContainerWidth(el.clientWidth);
     return () => obs.disconnect();
   }, []);
 
   const GAP = 4;
-  const LABEL_W = 44; // 层号标签宽度 + gap
-  const SHELF_PAD = 40 + 20; // 货架外框 padding (24*2) + 内层 padding (10*2)
+  const LABEL_W = 52; // 层号标签宽度 + gap
+  const OUTER_PAD = 48; // 页面 padding (24*2)
   const CARD_PAD = 48; // 卡片内边距 (24*2)
-  const MIN_UNIT_W = 52;
+  const SHELF_PAD = 40; // 货架外框 padding (20*2)
+  const SHELF_BORDER = 6; // 货架外框 border (3*2)
+  const LAYER_PAD = 20; // 层隔板内边距 (10*2)
+  const MIN_UNIT_W = 40;
   const MAX_UNIT_W = 100;
   const BASE_UNIT_H = 110;
 
   // 容器可用宽度 → 计算单个面的宽度
-  const UNIT_W = (() => {
+  const UNIT_W = useMemo(() => {
     if (!containerWidth || !maxLevelFacings) return MAX_UNIT_W;
-    // 可用宽度 = 容器宽 - 卡片边距 - 货架外框边距 - 层号标签宽度
-    const available = containerWidth - CARD_PAD - SHELF_PAD - LABEL_W - 8;
+    // 可用宽度 = 容器宽 - 卡片边距 - 货架外框边距 - 货架 border - 层隔板内边距 - 层号标签宽度
+    const available = containerWidth - CARD_PAD - SHELF_PAD - SHELF_BORDER - LAYER_PAD - LABEL_W;
     // 将可用宽度平分给所有面（含间距）
     const raw = Math.floor((available - (maxLevelFacings - 1) * GAP) / maxLevelFacings);
     return Math.min(MAX_UNIT_W, Math.max(MIN_UNIT_W, raw));
-  })();
+  }, [containerWidth, maxLevelFacings]);
 
   // 高度按宽度比例缩放
   const UNIT_H = Math.round(BASE_UNIT_H * (UNIT_W / MAX_UNIT_W));
 
   return (
     <div
+      ref={containerRef}
       className="min-h-screen"
       style={{ background: "linear-gradient(135deg, #f0f4ff 0%, #fafafa 100%)", padding: "24px" }}
     >
@@ -415,7 +419,6 @@ export default function Planogram() {
         </div>
       ) : (
         <div
-          ref={containerRef}
           className="rounded-2xl"
           style={{
             background: "white",

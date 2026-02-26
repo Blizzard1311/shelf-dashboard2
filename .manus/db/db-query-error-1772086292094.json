@@ -1,0 +1,8 @@
+{
+  "query": "SELECT shelf_code, shelf_level, COUNT(*) as items, SUM(facing_count) as total_facings, MAX(facing_count) as max_facing FROM shelf_data WHERE shelf_code = '食品1' AND session_id = (SELECT MAX(id) FROM upload_sessions) GROUP BY shelf_code, shelf_level ORDER BY shelf_level;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute SELECT shelf_code, shelf_level, COUNT(*) as items, SUM(facing_count) as total_facings, MAX(facing_count) as max_facing FROM shelf_data WHERE shelf_code = '食品1' AND session_id = (SELECT MAX(id) FROM upload_sessions) GROUP BY shelf_code, shelf_level ORDER BY shelf_level;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'shelf_code' in 'group statement'"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "query": "SELECT shelfLevel, COUNT(*) as items, SUM(COALESCE(facingCount,1)) as total_facings FROM shelf_data WHERE shelfCode = '食品1' AND sessionId = (SELECT MAX(id) FROM upload_sessions) GROUP BY shelfLevel ORDER BY shelfLevel;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute SELECT shelfLevel, COUNT(*) as items, SUM(COALESCE(facingCount,1)) as total_facings FROM shelf_data WHERE shelfCode = '食品1' AND sessionId = (SELECT MAX(id) FROM upload_sessions) GROUP BY shelfLevel ORDER BY shelfLevel;",
+  "rows": [
+    {
+      "shelfLevel": "1",
+      "items": "5",
+      "total_facings": "10"
+    },
+    {
+      "shelfLevel": "2",
+      "items": "4",
+      "total_facings": "10"
+    },
+    {
+      "shelfLevel": "3",
+      "items": "4",
+      "total_facings": "7"
+    },
+    {
+      "shelfLevel": "4",
+      "items": "4",
+      "total_facings": "8"
+    },
+    {
+      "shelfLevel": "5",
+      "items": "4",
+      "total_facings": "7"
+    },
+    {
+      "shelfLevel": "6",
+      "items": "5",
+      "total_facings": "12"
+    },
+    {
+      "shelfLevel": "7",
+      "items": "4",
+      "total_facings": "7"
+    }
+  ],
+  "messages": [],
+  "stdout": "shelfLevel\titems\ttotal_facings\n1\t5\t10\n2\t4\t10\n3\t4\t7\n4\t4\t8\n5\t4\t7\n6\t5\t12\n7\t4\t7\n",
+  "stderr": "",
+  "execution_time_ms": 1652
+}
