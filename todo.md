@@ -184,3 +184,6 @@
 - [x] 排查上传流程：tenantId 是正确写入 upload_sessions 和 shelf_data
 - [x] 排查查询流程：latestSession 按 tenantId 过滤正常
 - [x] 已验证解决
+
+## Bug 修复：货架生命力透视页面陈列图无法整体展示
+- [x] 将 Planogram 页面已修复的自适应缩放逻辑同步到货架生命力透视页面

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
+import { useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft,
@@ -340,6 +341,23 @@ export default function VitalityDetail() {
   // 排面调整 map: productId -> adjustedFacing
   const [facingAdjustments, setFacingAdjustments] = useState<Record<number, number>>({});
 
+  // 自适应缩放：测量棚格图容器宽度
+  const planogramContainerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  useEffect(() => {
+    const el = planogramContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      if (w > 0) setContainerWidth(w);
+    });
+    ro.observe(el);
+    // 初始值
+    const w = el.getBoundingClientRect().width;
+    if (w > 0) setContainerWidth(w);
+    return () => ro.disconnect();
+  }, []);
+
   // 获取最新 sessionId
   const { data: sessionData } = trpc.shelf.latestSession.useQuery();
   const sessionId = sessionData?.sessionId ?? null;
@@ -432,9 +450,18 @@ export default function VitalityDetail() {
     );
   }, [levelGroups, facingAdjustments]);
 
-  const UNIT_W = 96;
-  const UNIT_H = 110;
+  // 自适应 UNIT_W：根据容器宽度和最大排面数动态计算
+  const BASE_UNIT_H = 110;
   const GAP = 4;
+  const LEVEL_LABEL_W = 44; // 层号标签宽度
+  const SHELF_PADDING = 2 * 24 + 2 * 20 + 2 * 3; // 卡片padding + 货架框padding + border
+  const UNIT_W = useMemo(() => {
+    if (!containerWidth || !maxLevelFacings) return 96;
+    const available = containerWidth - SHELF_PADDING - LEVEL_LABEL_W - 8;
+    const raw = Math.floor((available - (maxLevelFacings - 1) * GAP) / maxLevelFacings);
+    return Math.max(40, Math.min(96, raw));
+  }, [containerWidth, maxLevelFacings]);
+  const UNIT_H = Math.round(BASE_UNIT_H * (UNIT_W / 96));
 
   // ── 筛选逻辑 ──
   const filteredIds = useMemo(() => {
@@ -616,6 +643,7 @@ export default function VitalityDetail() {
           </div>
 
           {/* 棚格图 */}
+          <div ref={planogramContainerRef} style={{ width: "100%" }}>
           {isLoading ? (
             <div className="flex items-center justify-center h-64 rounded-2xl" style={{ background: "white" }}>
               <div className="text-gray-400 text-sm">加载中...</div>
@@ -627,27 +655,27 @@ export default function VitalityDetail() {
             </div>
           ) : (
             <div
-              className="rounded-2xl overflow-auto"
-              style={{ background: "white", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", padding: "24px" }}
+              className="rounded-2xl"
+              style={{ background: "white", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", padding: "24px", overflow: UNIT_W <= 40 ? "auto" : "hidden" }}
             >
               <div
                 style={{
-                  display: "inline-block",
+                  width: "100%",
                   background: "#f1f5f9",
                   borderRadius: 12,
                   padding: "16px 20px",
                   border: "3px solid #cbd5e1",
                   boxShadow: "inset 0 2px 8px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08)",
-                  minWidth: "fit-content",
+                  boxSizing: "border-box",
                 }}
               >
                 {levelGroups.map(([level, levelItems]) => {
                   const usedFacings = levelItems.reduce((sum, item) => {
                     return sum + (facingAdjustments[item.id] ?? Math.max(1, item.facingCount ?? 1));
                   }, 0);
-                  const shelfWidth = maxLevelFacings * UNIT_W + (maxLevelFacings - 1) * GAP;
+                  // 按本层实际排面数等比分配宽度
                   const scaledUnitW = usedFacings > 0
-                    ? Math.floor((shelfWidth - (usedFacings - 1) * GAP) / usedFacings)
+                    ? Math.max(40, Math.floor((UNIT_W * maxLevelFacings - (usedFacings - 1) * GAP) / usedFacings))
                     : UNIT_W;
 
                   return (
@@ -669,8 +697,7 @@ export default function VitalityDetail() {
                           border: "1px solid #c8d0e0",
                           boxShadow: "inset 0 -3px 0 #b8c4d8",
                           minHeight: UNIT_H + 20,
-                          width: shelfWidth + 20,
-                          minWidth: shelfWidth + 20,
+                          flex: 1,
                         }}
                       >
                         {levelItems.map(item => {
@@ -698,6 +725,7 @@ export default function VitalityDetail() {
               </div>
             </div>
           )}
+          </div>
         </div>
 
         {/* 右侧：商品效率排行榜 */}
