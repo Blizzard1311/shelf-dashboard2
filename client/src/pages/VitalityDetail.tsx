@@ -591,7 +591,7 @@ export default function VitalityDetail() {
       </div>
 
       {/* ── 主体：棚格图 + 排行榜 ── */}
-      <div className="flex gap-6 items-stretch">
+      <div className="flex gap-6 items-start">
 
         {/* 左侧：棚格图 */}
         <div className="flex-1 min-w-0">
@@ -730,12 +730,13 @@ export default function VitalityDetail() {
 
         {/* 右侧：商品效率排行榜 */}
         <div
-          className="rounded-2xl flex-shrink-0 flex flex-col"
+          className="rounded-2xl flex-shrink-0 flex flex-col sticky top-4"
           style={{
             width: 340,
             background: "white",
             boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
             overflow: "hidden",
+            maxHeight: "calc(100vh - 120px)",
           }}
         >
           {/* 排行榜标题 */}
@@ -783,7 +784,7 @@ export default function VitalityDetail() {
           </div>
 
           {/* 排行榜列表 */}
-          <div className="overflow-y-auto px-2 py-2 flex-1" style={{ minHeight: 0 }}>
+          <div className="overflow-y-auto px-2 py-2 flex-1" style={{ minHeight: 0, maxHeight: "calc(100vh - 220px)" }}>
             {rankedItems.map(item => (
               <RankRow
                 key={item.id}
