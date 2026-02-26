@@ -395,18 +395,12 @@ export default function AdjustmentPlan() {
   const [, setLocation] = useLocation();
   const [filterMode, setFilterMode] = useState<"all" | "zero" | "modified">("all");
 
-  // 解析 URL query 中的调整数据
+  // 从 sessionStorage 读取调整方案数据
   const planData = useMemo<AdjustmentPlanData | null>(() => {
     try {
-      const params = new URLSearchParams(window.location.search);
-      const raw = params.get("data");
+      const raw = sessionStorage.getItem("adjustmentPlanData");
       if (!raw) return null;
-      // 正确解码流程：
-      // 1. 用 decodeURIComponent 解码 URL 编码（还原被 encodeURIComponent 编码的 base64 字符串）
-      // 2. 用 decodeURIComponent(escape(atob(...))) 解码 base64 并还原中文
-      const base64Str = decodeURIComponent(raw);
-      const decoded = decodeURIComponent(escape(atob(base64Str)));
-      return JSON.parse(decoded) as AdjustmentPlanData;
+      return JSON.parse(raw) as AdjustmentPlanData;
     } catch {
       return null;
     }

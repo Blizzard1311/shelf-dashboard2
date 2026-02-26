@@ -504,11 +504,9 @@ export default function VitalityDetail() {
       items: planItems,
     };
 
-    // 使用 encodeURIComponent 对整个 base64 字符串进行 URL 编码
-    // 避免 base64 中的 + 号在 URL 中被当作空格处理
-    const jsonStr = JSON.stringify(planData);
-    const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(jsonStr))));
-    window.open(`/adjustment-plan?data=${encoded}`, "_blank");
+    // 使用 sessionStorage 传递数据，避免 URL 编码/长度限制问题
+    sessionStorage.setItem("adjustmentPlanData", JSON.stringify(planData));
+    window.open("/adjustment-plan", "_blank");
   };
 
   return (

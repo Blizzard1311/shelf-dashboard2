@@ -126,3 +126,4 @@
 ## Bug 修复（2026-02-26）
 - [x] 修复 AdjustmentPlan 页面 data 参数解析错误（根本原因：base64中的+号被 URL 当作空格；修复：编码端加 encodeURIComponent，解码端用 URLSearchParams.get()自动解码+decodeURIComponent(escape(atob()))）
 - [x] 修复页面刷新过于频繁的问题（QueryClient 添加 staleTime=5min + refetchOnWindowFocus=false）
+- [x] 彻底修复调整方案数据传递：改用 sessionStorage 替代 URL 参数，避免编码/长度问题
