@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Download, Upload, CheckCircle2, XCircle, FileSpreadsheet, BarChart2, Package } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useTenant } from "@/contexts/TenantContext";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -29,7 +30,10 @@ interface ParseResult {
 }
 
 export default function DataUpload() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated: oauthAuthenticated, loading: authLoading } = useAuth();
+  const { tenant, loading: tenantLoading } = useTenant();
+  const loading = authLoading || tenantLoading;
+  const isAuthenticated = oauthAuthenticated || !!tenant;
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<ParseResult | null>(null);
