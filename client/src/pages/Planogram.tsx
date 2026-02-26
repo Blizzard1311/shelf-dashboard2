@@ -337,9 +337,15 @@ export default function Planogram() {
             }}
           >
             {levelGroups.map(([level, levelItems]) => {
-              // 计算该层已占面数
+              // 该层总面数
               const usedFacings = levelItems.reduce((sum, item) => sum + Math.max(1, item.facingCount ?? 1), 0);
-              const emptyFacings = maxLevelFacings - usedFacings;
+              // 层板总宽 = 最大层面数 × UNIT_W + 间距
+              const shelfWidth = maxLevelFacings * UNIT_W + (maxLevelFacings - 1) * GAP;
+              // 每个面的实际宽度：将层板宽度平分给该层的所有面数
+              // 公式：(shelfWidth - (usedFacings-1)*GAP) / usedFacings 得到每个面的宽度
+              const scaledUnitW = usedFacings > 0
+                ? Math.floor((shelfWidth - (usedFacings - 1) * GAP) / usedFacings)
+                : UNIT_W;
               return (
                 <div key={level} style={{ marginBottom: GAP * 2, display: "flex", alignItems: "stretch", gap: 8 }}>
                   {/* 层号标签 */}
@@ -369,7 +375,7 @@ export default function Planogram() {
                     </span>
                   </div>
 
-                  {/* 货架层隔板背景 */}
+                  {/* 货架层隔板背景：固定宽度等于最大层宽 */}
                   <div
                     style={{
                       display: "flex",
@@ -382,9 +388,8 @@ export default function Planogram() {
                       border: "1px solid #c8d0e0",
                       boxShadow: "inset 0 -3px 0 #b8c4d8",
                       minHeight: UNIT_H + 20,
-                      // 固定宽度：最大层面数 × 单位宽 + 间距
-                      width: maxLevelFacings * UNIT_W + (maxLevelFacings - 1) * GAP + 20,
-                      minWidth: maxLevelFacings * UNIT_W + (maxLevelFacings - 1) * GAP + 20,
+                      width: shelfWidth + 20,
+                      minWidth: shelfWidth + 20,
                     }}
                   >
                     {levelItems.map((item) => (
@@ -393,29 +398,10 @@ export default function Planogram() {
                         item={item}
                         isTopQty={maxQtyIds.has(item.id)}
                         isTopAmount={maxAmountIds.has(item.id)}
-                        unitWidth={UNIT_W}
+                        unitWidth={scaledUnitW}
                         unitHeight={UNIT_H}
                       />
                     ))}
-                    {/* 右侧空白占位块，补齐到最大层宽度 */}
-                    {emptyFacings > 0 && (
-                      <div
-                        style={{
-                          width: emptyFacings * UNIT_W + (emptyFacings - 1) * GAP,
-                          height: UNIT_H,
-                          minWidth: emptyFacings * UNIT_W + (emptyFacings - 1) * GAP,
-                          borderRadius: 6,
-                          background: "rgba(203,213,225,0.3)",
-                          border: "2px dashed #cbd5e1",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <span style={{ fontSize: 10, color: "#94a3b8", fontStyle: "italic" }}>空位</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               );
