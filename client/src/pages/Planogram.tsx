@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { useLocation, useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Package, TrendingUp, DollarSign, BarChart3 } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
 
 // ─────────────────────────────────────────────
 // 数字格式化
@@ -247,10 +248,42 @@ export default function Planogram() {
     return { totalQty, productCount, facingActivityRate, zeroSalesSkus, topProduct };
   }, [items]);
 
-  // 方块尺寸
-  const UNIT_W = 100;
-  const UNIT_H = 110;
+  // 自适应方块尺寸
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(entries => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      setContainerWidth(w);
+    });
+    obs.observe(el);
+    setContainerWidth(el.clientWidth);
+    return () => obs.disconnect();
+  }, []);
+
   const GAP = 4;
+  const LABEL_W = 44; // 层号标签宽度 + gap
+  const SHELF_PAD = 40 + 20; // 货架外框 padding (24*2) + 内层 padding (10*2)
+  const CARD_PAD = 48; // 卡片内边距 (24*2)
+  const MIN_UNIT_W = 52;
+  const MAX_UNIT_W = 100;
+  const BASE_UNIT_H = 110;
+
+  // 容器可用宽度 → 计算单个面的宽度
+  const UNIT_W = (() => {
+    if (!containerWidth || !maxLevelFacings) return MAX_UNIT_W;
+    // 可用宽度 = 容器宽 - 卡片边距 - 货架外框边距 - 层号标签宽度
+    const available = containerWidth - CARD_PAD - SHELF_PAD - LABEL_W - 8;
+    // 将可用宽度平分给所有面（含间距）
+    const raw = Math.floor((available - (maxLevelFacings - 1) * GAP) / maxLevelFacings);
+    return Math.min(MAX_UNIT_W, Math.max(MIN_UNIT_W, raw));
+  })();
+
+  // 高度按宽度比例缩放
+  const UNIT_H = Math.round(BASE_UNIT_H * (UNIT_W / MAX_UNIT_W));
 
   return (
     <div
@@ -382,23 +415,24 @@ export default function Planogram() {
         </div>
       ) : (
         <div
-          className="rounded-2xl overflow-auto"
+          ref={containerRef}
+          className="rounded-2xl"
           style={{
             background: "white",
             boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
             padding: "24px",
+            overflowX: UNIT_W <= MIN_UNIT_W ? "auto" : "hidden",
           }}
         >
           {/* 货架外框 */}
           <div
             style={{
-              display: "inline-block",
+              display: "block",
               background: "#f1f5f9",
               borderRadius: 12,
               padding: "16px 20px",
               border: "3px solid #cbd5e1",
               boxShadow: "inset 0 2px 8px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08)",
-              minWidth: "fit-content",
             }}
           >
             {levelGroups.map(([level, levelItems]) => {
@@ -440,7 +474,7 @@ export default function Planogram() {
                     </span>
                   </div>
 
-                  {/* 货架层隔板背景：固定宽度等于最大层宽 */}
+                  {/* 货架层隔板背景：自适应宽度 */}
                   <div
                     style={{
                       display: "flex",
@@ -453,8 +487,7 @@ export default function Planogram() {
                       border: "1px solid #c8d0e0",
                       boxShadow: "inset 0 -3px 0 #b8c4d8",
                       minHeight: UNIT_H + 20,
-                      width: shelfWidth + 20,
-                      minWidth: shelfWidth + 20,
+                      flex: 1,
                     }}
                   >
                     {levelItems.map((item) => (
