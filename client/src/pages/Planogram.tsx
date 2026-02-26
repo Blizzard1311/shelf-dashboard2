@@ -76,7 +76,11 @@ function ProductCell({ item, isTopQty, isTopAmount, unitWidth, unitHeight }: Pro
 
   return (
     <div
-      title={`${item.productName ?? ""} (${item.productCode ?? ""})\n销售数量: ${item.salesQty ?? "—"}\n销售金额: ¥${fmtAmount(salesAmountNum)}\n销售毛利: ¥${fmtAmount(grossProfitNum)}`}
+         title={`${item.productName ?? ""} (${item.productCode ?? ""})
+陈列面数: ${facing}
+销售数量: ${item.salesQty ?? "—"}
+销售金额: ¥${fmtAmount(salesAmountNum)}
+销售毛利: ¥${fmtAmount(grossProfitNum)}`}
       style={{
         width,
         height,
@@ -132,6 +136,9 @@ function ProductCell({ item, isTopQty, isTopAmount, unitWidth, unitHeight }: Pro
 
       {/* 数据区 */}
       <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <div style={{ fontSize: 9, color: "#6b7280" }}>
+          面: <span style={{ color: "#6366f1", fontWeight: 700 }}>{facing}</span>
+        </div>
         <div style={{ fontSize: 9, color: isTopQty ? "#ea580c" : "#6b7280", fontWeight: isTopQty ? 700 : 400 }}>
           量: <span style={{ color: isTopQty ? "#ea580c" : textColor, fontWeight: 700 }}>{fmtQty(item.salesQty)}</span>
         </div>
