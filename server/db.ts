@@ -434,6 +434,11 @@ export async function getShelfSummaryListPaged(
       totalGrossProfit: sql<number>`sum(cast(${shelfData.grossProfit} as decimal(18,2)))`,
       totalSalesQty: sql<number>`sum(${shelfData.salesQty})`,
       productCount: sql<number>`count(distinct ${shelfData.productCode})`,
+      // 动效率：有销售排面 / 总排面
+      activeFacings: sql<number>`sum(case when ${shelfData.salesQty} > 0 then ${shelfData.facingCount} else 0 end)`,
+      totalFacings: sql<number>`sum(${shelfData.facingCount})`,
+      // 零销售SKU数
+      zeroSalesCount: sql<number>`count(distinct case when ${shelfData.salesQty} = 0 or ${shelfData.salesQty} is null then ${shelfData.productCode} end)`,
     })
     .from(shelfData)
     .where(
@@ -445,5 +450,41 @@ export async function getShelfSummaryListPaged(
     .groupBy(shelfData.shelfCode)
     .orderBy(shelfData.shelfCode);
 
-  return { rows, total };
+  // 为每个货架查询销售金额最高的商品（TOP商品）
+  const topProductRows = await db
+    .select({
+      shelfCode: shelfData.shelfCode,
+      productName: shelfData.productName,
+      salesAmount: sql<number>`sum(cast(${shelfData.salesAmount} as decimal(18,2)))`,
+    })
+    .from(shelfData)
+    .where(
+      and(
+        whereConditions,
+        sql`${shelfData.shelfCode} IN (${sql.join(pageCodes.map(c => sql`${c}`), sql`, `)})`
+      )
+    )
+    .groupBy(shelfData.shelfCode, shelfData.productName)
+    .orderBy(sql`sum(cast(${shelfData.salesAmount} as decimal(18,2))) desc`);
+
+  // 每个货架只取第一条（金额最高）
+  const topProductMap = new Map<string, { productName: string | null; salesAmount: number }>();
+  for (const r of topProductRows) {
+    if (!topProductMap.has(r.shelfCode ?? "")) {
+      topProductMap.set(r.shelfCode ?? "", {
+        productName: r.productName,
+        salesAmount: Number(r.salesAmount ?? 0),
+      });
+    }
+  }
+
+  const enrichedRows = rows.map(r => ({
+    ...r,
+    facingActivityRate: r.totalFacings > 0
+      ? Math.round((r.activeFacings / r.totalFacings) * 1000) / 10
+      : 0,
+    topProduct: topProductMap.get(r.shelfCode ?? "") ?? null,
+  }));
+
+  return { rows: enrichedRows, total };
 }

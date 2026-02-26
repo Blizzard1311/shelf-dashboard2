@@ -219,11 +219,32 @@ export default function Planogram() {
 
   // ── 汇总统计 ──
   const summary = useMemo(() => {
-    const totalAmount = items.reduce((s, i) => s + Number(i.salesAmount ?? 0), 0);
     const totalQty = items.reduce((s, i) => s + (i.salesQty ?? 0), 0);
-    const totalProfit = items.reduce((s, i) => s + Number(i.grossProfit ?? 0), 0);
+    // 商品种数
     const productCount = new Set(items.map(i => i.productCode).filter(Boolean)).size;
-    return { totalAmount, totalQty, totalProfit, productCount };
+    // 动效率
+    const activeFacings = items.reduce((s, i) => s + ((i.salesQty ?? 0) > 0 ? Math.max(1, i.facingCount ?? 1) : 0), 0);
+    const totalFacings = items.reduce((s, i) => s + Math.max(1, i.facingCount ?? 1), 0);
+    const facingActivityRate = totalFacings > 0 ? Math.round(activeFacings / totalFacings * 1000) / 10 : 0;
+    // 零销售SKU
+    const zeroSalesSkus = new Set(
+      items.filter(i => (i.salesQty ?? 0) === 0).map(i => i.productCode).filter(Boolean)
+    ).size;
+    // TOP商品（销售金额最高）
+    const productAmountMap = new Map<string, { name: string | null; amount: number }>();
+    for (const item of items) {
+      const code = item.productCode ?? "";
+      const amt = Number(item.salesAmount ?? 0);
+      const existing = productAmountMap.get(code);
+      if (!existing || amt > existing.amount) {
+        productAmountMap.set(code, { name: item.productName, amount: amt });
+      }
+    }
+    let topProduct: { name: string | null; amount: number } | null = null;
+    Array.from(productAmountMap.values()).forEach(v => {
+      if (!topProduct || v.amount > topProduct!.amount) topProduct = v;
+    });
+    return { totalQty, productCount, facingActivityRate, zeroSalesSkus, topProduct };
   }, [items]);
 
   // 方块尺寸
@@ -260,30 +281,74 @@ export default function Planogram() {
         </div>
       </div>
 
-      {/* 汇总看板 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {[
-          { label: "商品种数", value: summary.productCount + " 种", icon: <Package size={18} />, color: "#6366f1" },
-          { label: "销售数量", value: fmtQty(summary.totalQty), icon: <BarChart3 size={18} />, color: "#10b981" },
-          { label: "销售金额", value: "¥" + fmtAmount(summary.totalAmount), icon: <TrendingUp size={18} />, color: "#f59e0b" },
-          { label: "销售毛利", value: "¥" + fmtAmount(summary.totalProfit), icon: <DollarSign size={18} />, color: "#ef4444" },
-        ].map((card) => (
-          <div
-            key={card.label}
-            className="rounded-2xl p-4"
-            style={{
-              background: "white",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
-              borderLeft: `4px solid ${card.color}`,
-            }}
-          >
-            <div className="flex items-center gap-2 mb-1" style={{ color: card.color }}>
-              {card.icon}
-              <span className="text-xs font-medium text-gray-500">{card.label}</span>
-            </div>
-            <p className="text-xl font-bold text-gray-800">{card.value}</p>
+      {/* 汇总看板 - 五个指标 */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+        {/* SKU */}
+        <div className="rounded-2xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", borderLeft: "4px solid #6366f1" }}>
+          <div className="flex items-center gap-2 mb-1" style={{ color: "#6366f1" }}>
+            <Package size={18} />
+            <span className="text-xs font-medium text-gray-500">SKU</span>
           </div>
-        ))}
+          <p className="text-xl font-bold text-gray-800">{summary.productCount} 种</p>
+          <p className="text-xs text-gray-400 mt-0.5">该货架陈列商品数</p>
+        </div>
+        {/* 销售数量 */}
+        <div className="rounded-2xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", borderLeft: "4px solid #10b981" }}>
+          <div className="flex items-center gap-2 mb-1" style={{ color: "#10b981" }}>
+            <BarChart3 size={18} />
+            <span className="text-xs font-medium text-gray-500">销售数量</span>
+          </div>
+          <p className="text-xl font-bold text-gray-800">{fmtQty(summary.totalQty)}</p>
+          <p className="text-xs text-gray-400 mt-0.5">顾客拿取次数</p>
+        </div>
+        {/* 动效率 */}
+        <div className="rounded-2xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", borderLeft: "4px solid #f59e0b" }}>
+          <div className="flex items-center gap-2 mb-1" style={{ color: "#f59e0b" }}>
+            <TrendingUp size={18} />
+            <span className="text-xs font-medium text-gray-500">动效率</span>
+          </div>
+          <p
+            className="text-xl font-bold"
+            style={{ color: summary.facingActivityRate >= 80 ? "#16a34a" : summary.facingActivityRate >= 50 ? "#d97706" : "#dc2626" }}
+          >
+            {summary.facingActivityRate}%
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">有效排面占比</p>
+        </div>
+        {/* TOP商品 */}
+        <div className="rounded-2xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", borderLeft: "4px solid #8b5cf6" }}>
+          <div className="flex items-center gap-2 mb-1" style={{ color: "#8b5cf6" }}>
+            <DollarSign size={18} />
+            <span className="text-xs font-medium text-gray-500">TOP 商品</span>
+          </div>
+          {(() => {
+            const tp = summary.topProduct as { name: string | null; amount: number } | null;
+            return tp && tp.amount > 0 ? (
+              <>
+                <p
+                  className="text-sm font-bold text-gray-800 leading-tight"
+                  style={{ overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" as const }}
+                >
+                  {tp.name ?? "—"}
+                </p>
+                <p className="text-xs font-semibold mt-0.5" style={{ color: "#8b5cf6" }}>¥{fmtAmount(tp.amount)}</p>
+              </>
+            ) : (
+              <p className="text-xl font-bold text-gray-300">—</p>
+            );
+          })()}
+        </div>
+        {/* 零销售SKU */}
+        <div className="rounded-2xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", borderLeft: `4px solid ${summary.zeroSalesSkus > 0 ? "#ef4444" : "#10b981"}` }}>
+          <div className="flex items-center gap-2 mb-1" style={{ color: summary.zeroSalesSkus > 0 ? "#ef4444" : "#10b981" }}>
+            <Package size={18} />
+            <span className="text-xs font-medium text-gray-500">零销售 SKU</span>
+          </div>
+          <p className="text-xl font-bold" style={{ color: summary.zeroSalesSkus > 0 ? "#dc2626" : "#16a34a" }}>
+            {summary.zeroSalesSkus} 种
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">{summary.zeroSalesSkus > 0 ? "占据排面但无销售" : "全部有销售"}</p>
+        </div>
       </div>
 
       {/* 图例 */}

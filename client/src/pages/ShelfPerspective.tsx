@@ -76,15 +76,16 @@ function StatCard({ title, value, subtitle, icon, color, bgColor }: StatCardProp
 // ─────────────────────────────────────────────
 interface ShelfCardProps {
   shelfCode: string;
-  totalSalesAmount: number;
-  totalGrossProfit: number;
   totalSalesQty: number;
   productCount: number;
+  facingActivityRate: number;
+  zeroSalesCount: number;
+  topProduct: { productName: string | null; salesAmount: number } | null;
   rank: number;
   onViewPlanogram?: () => void;
 }
 
-function ShelfCard({ shelfCode, totalSalesAmount, totalGrossProfit, totalSalesQty, productCount, rank, onViewPlanogram }: ShelfCardProps) {
+function ShelfCard({ shelfCode, totalSalesQty, productCount, facingActivityRate, zeroSalesCount, topProduct, rank, onViewPlanogram }: ShelfCardProps) {
   const handleClick = () => { if (onViewPlanogram) onViewPlanogram(); };
   const colorSets = [
     { bg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", shadow: "rgba(102,126,234,0.35)" },
@@ -100,14 +101,22 @@ function ShelfCard({ shelfCode, totalSalesAmount, totalGrossProfit, totalSalesQt
   ];
   const colorSet = colorSets[rank % colorSets.length];
 
+  // 动效率颜色：>=80% 绿，>=50% 黄，<50% 红
+  const rateColor = facingActivityRate >= 80
+    ? "rgba(134,239,172,0.95)"
+    : facingActivityRate >= 50
+    ? "rgba(253,224,71,0.95)"
+    : "rgba(252,165,165,0.95)";
+  const rateTextColor = facingActivityRate >= 80 ? "#166534" : facingActivityRate >= 50 ? "#854d0e" : "#991b1b";
+
   return (
     <div
-      className="rounded-2xl p-5 flex flex-col gap-3 cursor-pointer select-none transition-all duration-200 hover:-translate-y-1 hover:scale-[1.02]"
+      className="rounded-2xl p-4 flex flex-col gap-2.5 cursor-pointer select-none transition-all duration-200 hover:-translate-y-1 hover:scale-[1.02]"
       onClick={handleClick}
       style={{
         background: colorSet.bg,
         boxShadow: `0 8px 24px ${colorSet.shadow}, 0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.2)`,
-        minHeight: 160,
+        minHeight: 200,
       }}
     >
       {/* 货架编码 + 排名 */}
@@ -126,42 +135,63 @@ function ShelfCard({ shelfCode, totalSalesAmount, totalGrossProfit, totalSalesQt
         </span>
       </div>
 
-      {/* 销售金额 */}
-      <div>
-        <p className="text-xs font-medium mb-0.5" style={{ color: "rgba(255,255,255,0.72)" }}>
-          销售金额
-        </p>
-        <p className="text-2xl font-bold" style={{ color: "white", textShadow: "0 1px 3px rgba(0,0,0,0.15)" }}>
-          ¥ {fmtAmount(totalSalesAmount)}
-        </p>
+      {/* 动效率 - 突出显示 */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.72)" }}>动效率</p>
+        <span
+          className="text-sm font-bold px-2.5 py-0.5 rounded-full"
+          style={{ background: rateColor, color: rateTextColor }}
+        >
+          {facingActivityRate}%
+        </span>
       </div>
 
-      {/* 销售毛利 */}
-      <div>
-        <p className="text-xs font-medium mb-0.5" style={{ color: "rgba(255,255,255,0.72)" }}>
-          销售毛利
-        </p>
-        <p className="text-xl font-bold" style={{ color: "white", textShadow: "0 1px 3px rgba(0,0,0,0.15)" }}>
-          ¥ {fmtAmount(totalGrossProfit)}
-        </p>
-      </div>
-
-      {/* 底部统计 */}
-      <div className="flex gap-4 mt-auto pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.2)" }}>
-        <div>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>销售数量</p>
-          <p className="text-sm font-semibold" style={{ color: "white" }}>
-            {fmtNumber(totalSalesQty)}
+      {/* TOP商品 */}
+      {topProduct && topProduct.salesAmount > 0 && (
+        <div
+          className="rounded-xl px-3 py-2"
+          style={{ background: "rgba(255,255,255,0.15)" }}
+        >
+          <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.65)" }}>TOP 商品</p>
+          <p
+            className="text-xs font-semibold leading-tight"
+            style={{
+              color: "white",
+              overflow: "hidden",
+              display: "-webkit-box",
+              WebkitLineClamp: 1,
+              WebkitBoxOrient: "vertical" as const,
+            }}
+          >
+            {topProduct.productName ?? "—"}
+          </p>
+          <p className="text-xs font-bold mt-0.5" style={{ color: "rgba(255,255,255,0.9)" }}>
+            ¥ {fmtAmount(topProduct.salesAmount)}
           </p>
         </div>
+      )}
+
+      {/* 底部四格统计 */}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-auto pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.2)" }}>
         <div>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>SKU</p>
-          <p className="text-sm font-semibold" style={{ color: "white" }}>
-            {fmtNumber(productCount)}
+          <p className="text-sm font-semibold" style={{ color: "white" }}>{fmtNumber(productCount)}</p>
+        </div>
+        <div>
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>销售数量</p>
+          <p className="text-sm font-semibold" style={{ color: "white" }}>{fmtNumber(totalSalesQty)}</p>
+        </div>
+        <div>
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>零销售 SKU</p>
+          <p
+            className="text-sm font-semibold"
+            style={{ color: zeroSalesCount > 0 ? "rgba(252,165,165,1)" : "rgba(134,239,172,1)" }}
+          >
+            {fmtNumber(zeroSalesCount)}
           </p>
         </div>
-        <div className="ml-auto flex items-center" style={{ color: "rgba(255,255,255,0.6)" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        <div className="flex items-end justify-end">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
         </div>
       </div>
     </div>
@@ -654,10 +684,11 @@ export default function ShelfPerspective() {
                 <ShelfCard
                   key={shelf.shelfCode}
                   shelfCode={shelf.shelfCode}
-                  totalSalesAmount={Number(shelf.totalSalesAmount)}
-                  totalGrossProfit={Number((shelf as any).totalGrossProfit ?? 0)}
                   totalSalesQty={Number(shelf.totalSalesQty)}
                   productCount={Number(shelf.productCount)}
+                  facingActivityRate={Number((shelf as any).facingActivityRate ?? 0)}
+                  zeroSalesCount={Number((shelf as any).zeroSalesCount ?? 0)}
+                  topProduct={(shelf as any).topProduct ?? null}
                   rank={(page - 1) * PAGE_SIZE + idx}
                   onViewPlanogram={() => setLocation(`/planogram/${encodeURIComponent(shelf.shelfCode)}`)}
                 />
