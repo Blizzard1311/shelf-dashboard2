@@ -13,10 +13,16 @@ const queryClient = new QueryClient({
     queries: {
       // 数据在 5 分钟内不重新请求，避免频繁刷新
       staleTime: 5 * 60 * 1000,
+      // 缓存保留 30 分钟，避免频繁重新获取
+      gcTime: 30 * 60 * 1000,
       // 禁用窗口重新获得焦点时自动重新请求（导致用户切换标签页后页面刷新）
       refetchOnWindowFocus: false,
       // 禁用网络重连时自动重新请求
       refetchOnReconnect: false,
+      // 禁用挂载时自动重新请求（除非数据已过期）
+      refetchOnMount: false,
+      // 禁用自动轮询（防止页面频繁刷新）
+      refetchInterval: undefined,
     },
   },
 });

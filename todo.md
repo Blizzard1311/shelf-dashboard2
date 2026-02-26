@@ -190,3 +190,7 @@
 
 ## 优化：货架生命力透视右侧排行榜高度自适应
 - [x] 右侧商品效率排行榜与左侧棚格图等高，内容多时自动拉长，两侧底部对齐
+
+## Bug 修复：全应用频繁刷新问题
+- [x] 排查应用的 QueryClient 全局配置，没有找到 refetchInterval 设置
+- [x] 优化 main.tsx 中的 QueryClient 配置：添加 refetchOnMount=false、refetchInterval=undefined、gcTime=30min，禁用所有自动轮询機制
