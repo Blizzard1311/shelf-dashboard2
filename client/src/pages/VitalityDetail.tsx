@@ -504,7 +504,10 @@ export default function VitalityDetail() {
       items: planItems,
     };
 
-    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(planData))));
+    // 使用 encodeURIComponent 对整个 base64 字符串进行 URL 编码
+    // 避免 base64 中的 + 号在 URL 中被当作空格处理
+    const jsonStr = JSON.stringify(planData);
+    const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(jsonStr))));
     window.open(`/adjustment-plan?data=${encoded}`, "_blank");
   };
 

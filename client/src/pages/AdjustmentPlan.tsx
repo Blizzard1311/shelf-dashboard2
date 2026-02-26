@@ -401,9 +401,11 @@ export default function AdjustmentPlan() {
       const params = new URLSearchParams(window.location.search);
       const raw = params.get("data");
       if (!raw) return null;
-      // 修复：base64 中的 + 在 URL 中被当作空格，需先还原；同时正确解码中文
-      const fixed = raw.replace(/ /g, "+");
-      const decoded = decodeURIComponent(escape(atob(fixed)));
+      // 正确解码流程：
+      // 1. 用 decodeURIComponent 解码 URL 编码（还原被 encodeURIComponent 编码的 base64 字符串）
+      // 2. 用 decodeURIComponent(escape(atob(...))) 解码 base64 并还原中文
+      const base64Str = decodeURIComponent(raw);
+      const decoded = decodeURIComponent(escape(atob(base64Str)));
       return JSON.parse(decoded) as AdjustmentPlanData;
     } catch {
       return null;

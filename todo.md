@@ -124,5 +124,5 @@
 - [x] Excel导出：Sheet2效率诊断依据
 - [x] Excel导出：Sheet3 0动销商品清单
 ## Bug 修复（2026-02-26）
-- [x] 修复 AdjustmentPlan 页面 data 参数解析错误（base64+中文解码不匹配，修复 decodeURIComponent+escape 解码链）
+- [x] 修复 AdjustmentPlan 页面 data 参数解析错误（根本原因：base64中的+号被 URL 当作空格；修复：编码端加 encodeURIComponent，解码端用 URLSearchParams.get()自动解码+decodeURIComponent(escape(atob()))）
 - [x] 修复页面刷新过于频繁的问题（QueryClient 添加 staleTime=5min + refetchOnWindowFocus=false）
