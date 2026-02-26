@@ -12,6 +12,10 @@ import {
   getShelfPlanogramData,
   getCategoryList,
   getShelfSummaryListPaged,
+  getShelfEfficiencyList,
+  getOverallEfficiencyStats,
+  getCategoryEfficiencyList,
+  getShelfProductEfficiency,
 } from "./db";
 
 export const appRouter = router({
@@ -91,6 +95,37 @@ export const appRouter = router({
           input.pageSize,
           input.category
         );
+      }),
+
+    // 全场汇总指标（生命力透视顶部卡片）
+    overallEfficiency: publicProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ input }) => {
+        return getOverallEfficiencyStats(input.sessionId);
+      }),
+
+    // 按大类汇总排面效率
+    categoryEfficiency: publicProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ input }) => {
+        return getCategoryEfficiencyList(input.sessionId);
+      }),
+
+    // 全货架排面效率列表（生命力透视第一层）
+    shelfEfficiencyList: publicProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        category: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return getShelfEfficiencyList(input.sessionId, input.category);
+      }),
+
+    // 单货架商品排面效率详情（生命力透视第二层）
+    shelfProductEfficiency: publicProcedure
+      .input(z.object({ sessionId: z.number(), shelfCode: z.string() }))
+      .query(async ({ input }) => {
+        return getShelfProductEfficiency(input.sessionId, input.shelfCode);
       }),
   }),
 });

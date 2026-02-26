@@ -29,21 +29,21 @@ const navItems = [
   },
   {
     key: "perspective",
-    label: "货架透视",
+    label: "货架卡看板",
     icon: BarChart3,
     path: "/shelf",
     gradient: "from-violet-500 to-purple-600",
     shadowColor: "oklch(0.55 0.18 300)",
-    description: "数据可视化分析",
+    description: "KPI 指标 · 趋势分析",
   },
   {
     key: "grid",
-    label: "棚格图",
+    label: "货架生命力透视",
     icon: Grid3X3,
     path: "/grid",
     gradient: "from-teal-500 to-cyan-600",
     shadowColor: "oklch(0.65 0.15 185)",
-    description: "棚格数据展示",
+    description: "空间布局 · 占位分析",
   },
 ];
 

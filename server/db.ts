@@ -220,6 +220,105 @@ export async function getCategoryList(sessionId: number): Promise<string[]> {
   return rows.map(r => r.category1).filter(Boolean) as string[];
 }
 
+/** 全货架排面效率汇总（用于生命力透视第一层） */
+export async function getShelfEfficiencyList(sessionId: number, category?: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const whereConditions = category
+    ? and(eq(shelfData.sessionId, sessionId), eq(shelfData.category1, category))
+    : eq(shelfData.sessionId, sessionId);
+
+  const rows = await db
+    .select({
+      shelfCode: shelfData.shelfCode,
+      totalFacings: sql<number>`sum(${shelfData.facingCount})`,
+      totalSalesAmount: sql<number>`sum(cast(${shelfData.salesAmount} as decimal(18,2)))`,
+      totalGrossProfit: sql<number>`sum(cast(${shelfData.grossProfit} as decimal(18,2)))`,
+      totalSalesQty: sql<number>`sum(${shelfData.salesQty})`,
+      productCount: sql<number>`count(distinct ${shelfData.productCode})`,
+      zeroSalesCount: sql<number>`sum(case when ${shelfData.salesQty} = 0 or ${shelfData.salesQty} is null then 1 else 0 end)`,
+      zeroSalesFacings: sql<number>`sum(case when ${shelfData.salesQty} = 0 or ${shelfData.salesQty} is null then ${shelfData.facingCount} else 0 end)`,
+    })
+    .from(shelfData)
+    .where(whereConditions)
+    .groupBy(shelfData.shelfCode)
+    .orderBy(shelfData.shelfCode);
+
+  return rows;
+}
+
+/** 全场汇总指标（生命力透视顶部卡片） */
+export async function getOverallEfficiencyStats(sessionId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select({
+      totalFacings: sql<number>`sum(${shelfData.facingCount})`,
+      totalSalesAmount: sql<number>`sum(cast(${shelfData.salesAmount} as decimal(18,2)))`,
+      totalGrossProfit: sql<number>`sum(cast(${shelfData.grossProfit} as decimal(18,2)))`,
+      zeroSalesCount: sql<number>`count(distinct case when ${shelfData.salesQty} = 0 or ${shelfData.salesQty} is null then ${shelfData.productCode} end)`,
+      zeroSalesFacings: sql<number>`sum(case when ${shelfData.salesQty} = 0 or ${shelfData.salesQty} is null then ${shelfData.facingCount} else 0 end)`,
+    })
+    .from(shelfData)
+    .where(eq(shelfData.sessionId, sessionId));
+  return rows[0] ?? null;
+}
+
+/** 按大类汇总排面效率（生命力透视大类分析） */
+export async function getCategoryEfficiencyList(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      category1: shelfData.category1,
+      totalFacings: sql<number>`sum(${shelfData.facingCount})`,
+      totalSalesAmount: sql<number>`sum(cast(${shelfData.salesAmount} as decimal(18,2)))`,
+      totalGrossProfit: sql<number>`sum(cast(${shelfData.grossProfit} as decimal(18,2)))`,
+      zeroSalesCount: sql<number>`sum(case when ${shelfData.salesQty} = 0 or ${shelfData.salesQty} is null then 1 else 0 end)`,
+      productCount: sql<number>`count(distinct ${shelfData.productCode})`,
+    })
+    .from(shelfData)
+    .where(
+      and(
+        eq(shelfData.sessionId, sessionId),
+        isNotNull(shelfData.category1)
+      )
+    )
+    .groupBy(shelfData.category1)
+    .orderBy(sql`sum(cast(${shelfData.salesAmount} as decimal(18,2))) desc`);
+  return rows;
+}
+
+/** 单货架详细诊断：每个商品的排面效率（生命力透视第二层） */
+export async function getShelfProductEfficiency(sessionId: number, shelfCode: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: shelfData.id,
+      productCode: shelfData.productCode,
+      productName: shelfData.productName,
+      shelfLevel: shelfData.shelfLevel,
+      positionCode: shelfData.positionCode,
+      facingCount: shelfData.facingCount,
+      displayLevel: shelfData.displayLevel,
+      stackCount: shelfData.stackCount,
+      salesQty: shelfData.salesQty,
+      salesAmount: shelfData.salesAmount,
+      grossProfit: shelfData.grossProfit,
+      category1: shelfData.category1,
+      category2: shelfData.category2,
+      category3: shelfData.category3,
+    })
+    .from(shelfData)
+    .where(
+      sql`${shelfData.sessionId} = ${sessionId} AND ${shelfData.shelfCode} = ${shelfCode}`
+    )
+    .orderBy(shelfData.shelfLevel, sql`cast(${shelfData.positionCode} as unsigned)`);
+  return rows;
+}
+
 /** 分页获取货架汇总列表（支持大类筛选） */
 export async function getShelfSummaryListPaged(
   sessionId: number,
