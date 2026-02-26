@@ -715,7 +715,7 @@ export default function VitalityDetail() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <BarChart3 size={16} className="text-indigo-500" />
-                <h3 className="text-sm font-bold text-gray-700">商品效率排行</h3>
+                <h3 className="text-sm font-bold text-gray-700">商品效率</h3>
                 <span className="text-xs text-gray-400">（效率最低排在最前）</span>
               </div>
               <button
