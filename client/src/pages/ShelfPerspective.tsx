@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
@@ -12,9 +12,13 @@ import {
   ChevronDown,
   RefreshCw,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+const PAGE_SIZE = 20;
 
 // ─────────────────────────────────────────────
 // 数字格式化
@@ -165,7 +169,7 @@ function ShelfCard({ shelfCode, totalSalesAmount, totalGrossProfit, totalSalesQt
 }
 
 // ─────────────────────────────────────────────
-// 筛选对话框
+// 筛选对话框（货架编码筛选，仅在无大类筛选时使用）
 // ─────────────────────────────────────────────
 interface FilterDialogProps {
   shelfCodes: string[];
@@ -294,11 +298,101 @@ function FilterDialog({ shelfCodes, selected, onConfirm, onClose }: FilterDialog
 }
 
 // ─────────────────────────────────────────────
+// 分页控件
+// ─────────────────────────────────────────────
+interface PaginationProps {
+  page: number;
+  total: number;
+  pageSize: number;
+  onChange: (page: number) => void;
+}
+
+function Pagination({ page, total, pageSize, onChange }: PaginationProps) {
+  const totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) return null;
+
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+
+  return (
+    <div className="flex items-center justify-between mt-4 pt-4" style={{ borderTop: "1px solid #f0f4ff" }}>
+      <span className="text-xs text-gray-400">
+        第 {start}–{end} 条，共 {total} 个货架
+      </span>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onChange(page - 1)}
+          disabled={page <= 1}
+          className="w-8 h-8 flex items-center justify-center rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{
+            background: page <= 1 ? "#f5f7ff" : "white",
+            border: "1.5px solid #e8ecff",
+            color: "#4f46e5",
+          }}
+        >
+          <ChevronLeft size={15} />
+        </button>
+
+        {/* 页码按钮：最多显示5个 */}
+        {Array.from({ length: totalPages }, (_, i) => i + 1)
+          .filter(p => {
+            if (totalPages <= 5) return true;
+            if (p === 1 || p === totalPages) return true;
+            return Math.abs(p - page) <= 1;
+          })
+          .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+            if (idx > 0 && typeof arr[idx - 1] === 'number' && (p as number) - (arr[idx - 1] as number) > 1) {
+              acc.push("...");
+            }
+            acc.push(p);
+            return acc;
+          }, [])
+          .map((p, i) =>
+            p === "..." ? (
+              <span key={`ellipsis-${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-gray-400">…</span>
+            ) : (
+              <button
+                key={p}
+                onClick={() => onChange(p as number)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-all"
+                style={{
+                  background: p === page ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : "white",
+                  border: p === page ? "none" : "1.5px solid #e8ecff",
+                  color: p === page ? "white" : "#374151",
+                  boxShadow: p === page ? "0 2px 8px rgba(102,126,234,0.4)" : "none",
+                }}
+              >
+                {p}
+              </button>
+            )
+          )
+        }
+
+        <button
+          onClick={() => onChange(page + 1)}
+          disabled={page >= totalPages}
+          className="w-8 h-8 flex items-center justify-center rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{
+            background: page >= totalPages ? "#f5f7ff" : "white",
+            border: "1.5px solid #e8ecff",
+            color: "#4f46e5",
+          }}
+        >
+          <ChevronRight size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // 主页面
 // ─────────────────────────────────────────────
 export default function ShelfPerspective() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [page, setPage] = useState(1);
   const [, setLocation] = useLocation();
 
   // 获取最新 sessionId
@@ -313,28 +407,49 @@ export default function ShelfPerspective() {
       { enabled: sessionId != null }
     );
 
-  // 货架列表
-  const { data: shelfList = [], isLoading: listLoading } =
-    trpc.shelf.shelfList.useQuery(
+  // 大类列表（用于筛选器下拉）
+  const { data: categoryList = [] } =
+    trpc.shelf.categoryList.useQuery(
       { sessionId: sessionId! },
       { enabled: sessionId != null }
     );
 
-  // 货架编码列表（筛选用）
+  // 分页货架列表（支持大类筛选）
+  const { data: pagedData, isLoading: listLoading } =
+    trpc.shelf.shelfListPaged.useQuery(
+      {
+        sessionId: sessionId!,
+        page,
+        pageSize: PAGE_SIZE,
+        category: selectedCategory || undefined,
+      },
+      { enabled: sessionId != null }
+    );
+
+  const shelfList = pagedData?.rows ?? [];
+  const totalShelves = pagedData?.total ?? 0;
+
+  // 货架编码列表（筛选对话框用，仅在无大类筛选时使用）
   const { data: shelfCodes = [] } =
     trpc.shelf.shelfCodes.useQuery(
       { sessionId: sessionId! },
       { enabled: sessionId != null }
     );
 
-  // 筛选后的货架列表
-  const displayList = useMemo(() => {
-    if (selectedCodes.length === 0) return shelfList;
-    return shelfList.filter((s) => selectedCodes.includes(s.shelfCode));
-  }, [shelfList, selectedCodes]);
+  // 切换大类时重置页码
+  const handleCategoryChange = (cat: string) => {
+    setSelectedCategory(cat);
+    setPage(1);
+    setSelectedCodes([]);
+  };
+
+  // 切换页码
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
 
   const isLoading = sessionLoading || statsLoading || listLoading;
-  const hasData = sessionId != null && shelfList.length > 0;
+  const hasData = sessionId != null;
 
   // ── 无数据状态 ──
   if (!sessionLoading && sessionId == null) {
@@ -369,7 +484,46 @@ export default function ShelfPerspective() {
   return (
     <div className="flex flex-col gap-6">
       {/* ── 顶部操作栏 ── */}
-      <div className="flex items-center justify-end flex-wrap gap-2">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        {/* 大类筛选器 */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {categoryList.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500 font-medium">大类：</span>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => handleCategoryChange("")}
+                  className="text-xs px-3 py-1.5 rounded-lg font-medium transition-all"
+                  style={{
+                    background: selectedCategory === "" ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : "#f5f7ff",
+                    color: selectedCategory === "" ? "white" : "#374151",
+                    border: selectedCategory === "" ? "none" : "1.5px solid #e8ecff",
+                    boxShadow: selectedCategory === "" ? "0 2px 8px rgba(102,126,234,0.35)" : "none",
+                  }}
+                >
+                  全部
+                </button>
+                {categoryList.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => handleCategoryChange(cat)}
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-all"
+                    style={{
+                      background: selectedCategory === cat ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : "#f5f7ff",
+                      color: selectedCategory === cat ? "white" : "#374151",
+                      border: selectedCategory === cat ? "none" : "1.5px solid #e8ecff",
+                      boxShadow: selectedCategory === cat ? "0 2px 8px rgba(102,126,234,0.35)" : "none",
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 货架编码筛选按钮 */}
         <div className="flex items-center gap-2 flex-wrap">
           {selectedCodes.length > 0 && (
             <Badge
@@ -456,7 +610,14 @@ export default function ShelfPerspective() {
             <h2 className="text-base font-bold text-gray-700">
               货架销售总览
             </h2>
-
+            {selectedCategory && (
+              <span
+                className="text-xs px-2 py-0.5 rounded-full font-medium ml-1"
+                style={{ background: "#eef2ff", color: "#4f46e5" }}
+              >
+                {selectedCategory}
+              </span>
+            )}
           </div>
           {isLoading && (
             <RefreshCw size={16} className="text-gray-400 animate-spin" />
@@ -474,30 +635,40 @@ export default function ShelfPerspective() {
               />
             ))}
           </div>
-        ) : displayList.length === 0 ? (
+        ) : shelfList.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="rounded-full p-4" style={{ background: "#f5f7ff" }}>
               <Package size={28} className="text-gray-300" />
             </div>
             <p className="text-sm text-gray-400">
-              {selectedCodes.length > 0 ? "所选货架无数据" : "暂无货架数据"}
+              {selectedCategory ? `大类「${selectedCategory}」无货架数据` : "暂无货架数据"}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {displayList.map((shelf, idx) => (
-              <ShelfCard
-                key={shelf.shelfCode}
-                shelfCode={shelf.shelfCode}
-                totalSalesAmount={Number(shelf.totalSalesAmount)}
-                totalGrossProfit={Number((shelf as any).totalGrossProfit ?? 0)}
-                totalSalesQty={Number(shelf.totalSalesQty)}
-                productCount={Number(shelf.productCount)}
-                rank={idx}
-                onViewPlanogram={() => setLocation(`/planogram/${encodeURIComponent(shelf.shelfCode)}`)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {shelfList.map((shelf, idx) => (
+                <ShelfCard
+                  key={shelf.shelfCode}
+                  shelfCode={shelf.shelfCode}
+                  totalSalesAmount={Number(shelf.totalSalesAmount)}
+                  totalGrossProfit={Number((shelf as any).totalGrossProfit ?? 0)}
+                  totalSalesQty={Number(shelf.totalSalesQty)}
+                  productCount={Number(shelf.productCount)}
+                  rank={(page - 1) * PAGE_SIZE + idx}
+                  onViewPlanogram={() => setLocation(`/planogram/${encodeURIComponent(shelf.shelfCode)}`)}
+                />
+              ))}
+            </div>
+
+            {/* 分页控件 */}
+            <Pagination
+              page={page}
+              total={totalShelves}
+              pageSize={PAGE_SIZE}
+              onChange={handlePageChange}
+            />
+          </>
         )}
       </div>
 
@@ -506,7 +677,10 @@ export default function ShelfPerspective() {
         <FilterDialog
           shelfCodes={shelfCodes}
           selected={selectedCodes}
-          onConfirm={setSelectedCodes}
+          onConfirm={(codes) => {
+            setSelectedCodes(codes);
+            setPage(1);
+          }}
           onClose={() => setFilterOpen(false)}
         />
       )}

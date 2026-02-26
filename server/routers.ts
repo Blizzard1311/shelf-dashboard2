@@ -10,6 +10,8 @@ import {
   getShelfCodeList,
   getUploadSessions,
   getShelfPlanogramData,
+  getCategoryList,
+  getShelfSummaryListPaged,
 } from "./db";
 
 export const appRouter = router({
@@ -65,6 +67,30 @@ export const appRouter = router({
       .input(z.object({ sessionId: z.number(), shelfCode: z.string() }))
       .query(async ({ input }) => {
         return getShelfPlanogramData(input.sessionId, input.shelfCode);
+      }),
+
+    // 大类列表（用于筛选器下拉）
+    categoryList: publicProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ input }) => {
+        return getCategoryList(input.sessionId);
+      }),
+
+    // 分页获取货架汇总列表（支持大类筛选）
+    shelfListPaged: publicProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(20),
+        category: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return getShelfSummaryListPaged(
+          input.sessionId,
+          input.page,
+          input.pageSize,
+          input.category
+        );
       }),
   }),
 });

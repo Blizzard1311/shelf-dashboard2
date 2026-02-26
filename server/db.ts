@@ -1,4 +1,4 @@
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, InsertShelfData, InsertUploadSession, users, shelfData, uploadSessions } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -201,4 +201,74 @@ export async function getUploadSessions() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(uploadSessions).orderBy(desc(uploadSessions.createdAt)).limit(10);
+}
+
+/** 获取大类列表（用于筛选器下拉） */
+export async function getCategoryList(sessionId: number): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .selectDistinct({ category1: shelfData.category1 })
+    .from(shelfData)
+    .where(
+      and(
+        eq(shelfData.sessionId, sessionId),
+        isNotNull(shelfData.category1)
+      )
+    )
+    .orderBy(shelfData.category1);
+  return rows.map(r => r.category1).filter(Boolean) as string[];
+}
+
+/** 分页获取货架汇总列表（支持大类筛选） */
+export async function getShelfSummaryListPaged(
+  sessionId: number,
+  page: number,
+  pageSize: number,
+  category?: string
+) {
+  const db = await getDb();
+  if (!db) return { rows: [], total: 0 };
+
+  const whereConditions = category
+    ? and(eq(shelfData.sessionId, sessionId), eq(shelfData.category1, category))
+    : eq(shelfData.sessionId, sessionId);
+
+  // 先查满足条件的货架编码总数（用于分页）
+  const countRows = await db
+    .select({ shelfCode: shelfData.shelfCode })
+    .from(shelfData)
+    .where(whereConditions)
+    .groupBy(shelfData.shelfCode);
+  const total = countRows.length;
+
+  // 再查当前页的货架汇总
+  const offset = (page - 1) * pageSize;
+  // 获取当前页的货架编码
+  const pageCodes = countRows
+    .map(r => r.shelfCode)
+    .sort()
+    .slice(offset, offset + pageSize);
+
+  if (pageCodes.length === 0) return { rows: [], total };
+
+  const rows = await db
+    .select({
+      shelfCode: shelfData.shelfCode,
+      totalSalesAmount: sql<number>`sum(cast(${shelfData.salesAmount} as decimal(18,2)))`,
+      totalGrossProfit: sql<number>`sum(cast(${shelfData.grossProfit} as decimal(18,2)))`,
+      totalSalesQty: sql<number>`sum(${shelfData.salesQty})`,
+      productCount: sql<number>`count(distinct ${shelfData.productCode})`,
+    })
+    .from(shelfData)
+    .where(
+      and(
+        whereConditions,
+        sql`${shelfData.shelfCode} IN (${sql.join(pageCodes.map(c => sql`${c}`), sql`, `)})`
+      )
+    )
+    .groupBy(shelfData.shelfCode)
+    .orderBy(shelfData.shelfCode);
+
+  return { rows, total };
 }
