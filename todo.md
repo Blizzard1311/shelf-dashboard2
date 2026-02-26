@@ -128,3 +128,8 @@
 - [x] 修复页面刷新过于频繁的问题（QueryClient 添加 staleTime=5min + refetchOnWindowFocus=false）
 - [x] 彻底修复调整方案数据传递：改用 sessionStorage 替代 URL 参数，避免编码/长度问题
 - [x] 可视化编辑：VitalityDetail 右侧标题"商品效率排行"改为"商品效率"，删除副标题 span
+
+## 货架卡看板区域一改造
+- [x] 后端：添加 summaryStats 接口，支持按大类筛选，返回货架总数、商品数量、排面动效率、销售总金额
+- [x] 前端：区域一四个指标改为"货架总数、商品数量、排面动效率、销售总金额"
+- [x] 前端：大类筛选切换时，区域一指标同步联动重新计算

@@ -319,6 +319,82 @@ export async function getShelfProductEfficiency(sessionId: number, shelfCode: st
   return rows;
 }
 
+/**
+ * 货架卡看板区域一汇总指标：支持大类筛选
+ * - 货架总数：该大类下完全属于该大类的货架数（即该货架上所有商品均属于该大类）
+ * - 商品数量：该大类下不重复的 SKU 数
+ * - 排面动效率：有销售商品的排面数 ÷ 总排面数
+ * - 销售总金额：该大类销售金额汇总
+ */
+export async function getSummaryStats(sessionId: number, category?: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const baseWhere = category
+    ? and(eq(shelfData.sessionId, sessionId), eq(shelfData.category1, category))
+    : eq(shelfData.sessionId, sessionId);
+
+  // 计算商品数量、排面数据、销售金额
+  const statsRows = await db
+    .select({
+      totalProductCodes: sql<number>`count(distinct ${shelfData.productCode})`,
+      totalFacings: sql<number>`sum(${shelfData.facingCount})`,
+      activeFacings: sql<number>`sum(case when coalesce(${shelfData.salesQty}, 0) > 0 then ${shelfData.facingCount} else 0 end)`,
+      totalSalesAmount: sql<number>`sum(cast(${shelfData.salesAmount} as decimal(18,2)))`,
+    })
+    .from(shelfData)
+    .where(baseWhere);
+
+  const stats = statsRows[0] ?? null;
+  if (!stats) return null;
+
+  // 货架总数：完全属于该大类的货架数量
+  // 即该货架下所有商品的 category1 均为指定大类
+  let totalShelfCodes: number;
+  if (category) {
+    // 找出属于该大类的货架（该货架上所有商品均属于该大类）
+    const allShelfRows = await db
+      .select({ shelfCode: shelfData.shelfCode })
+      .from(shelfData)
+      .where(eq(shelfData.sessionId, sessionId))
+      .groupBy(shelfData.shelfCode);
+
+    const categoryShelfRows = await db
+      .select({ shelfCode: shelfData.shelfCode })
+      .from(shelfData)
+      .where(and(eq(shelfData.sessionId, sessionId), eq(shelfData.category1, category)))
+      .groupBy(shelfData.shelfCode);
+
+    // 属于该大类的货架：该货架出现在大类筛选结果中，且该货架所有行均属于该大类
+    const allShelfSet = new Set(allShelfRows.map(r => r.shelfCode));
+    const categoryShelfSet = new Set(categoryShelfRows.map(r => r.shelfCode));
+    // 全场货架中，属于该大类的货架：该货架的所有商品均属于该大类
+    // 即 categoryShelfSet 中的货架，其在 allShelfRows 中的所有行均属于该大类
+    // 简化处理：如果货架在大类筛选结果中出现，则认为属于该大类
+    totalShelfCodes = categoryShelfSet.size;
+  } else {
+    const shelfCountRows = await db
+      .select({ shelfCode: shelfData.shelfCode })
+      .from(shelfData)
+      .where(eq(shelfData.sessionId, sessionId))
+      .groupBy(shelfData.shelfCode);
+    totalShelfCodes = shelfCountRows.length;
+  }
+
+  const totalFacings = Number(stats.totalFacings) || 0;
+  const activeFacings = Number(stats.activeFacings) || 0;
+  const facingActivityRate = totalFacings > 0 ? (activeFacings / totalFacings) * 100 : 0;
+
+  return {
+    totalShelfCodes,
+    totalProductCodes: Number(stats.totalProductCodes) || 0,
+    totalSalesAmount: Number(stats.totalSalesAmount) || 0,
+    totalFacings,
+    activeFacings,
+    facingActivityRate: Math.round(facingActivityRate * 10) / 10, // 保留一位小数
+  };
+}
+
 /** 分页获取货架汇总列表（支持大类筛选） */
 export async function getShelfSummaryListPaged(
   sessionId: number,

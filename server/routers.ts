@@ -16,6 +16,7 @@ import {
   getOverallEfficiencyStats,
   getCategoryEfficiencyList,
   getShelfProductEfficiency,
+  getSummaryStats,
 } from "./db";
 
 export const appRouter = router({
@@ -126,6 +127,16 @@ export const appRouter = router({
       .input(z.object({ sessionId: z.number(), shelfCode: z.string() }))
       .query(async ({ input }) => {
         return getShelfProductEfficiency(input.sessionId, input.shelfCode);
+      }),
+
+    // 货架卡看板区域一汇总指标（支持大类筛选）
+    summaryStats: publicProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        category: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return getSummaryStats(input.sessionId, input.category);
       }),
   }),
 });

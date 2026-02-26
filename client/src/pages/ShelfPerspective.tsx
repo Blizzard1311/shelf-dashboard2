@@ -400,10 +400,13 @@ export default function ShelfPerspective() {
     trpc.shelf.latestSession.useQuery();
   const sessionId = sessionData?.sessionId ?? null;
 
-  // 看板统计
+  // 看板统计（支持大类筛选联动）
   const { data: stats, isLoading: statsLoading } =
-    trpc.shelf.dashboardStats.useQuery(
-      { sessionId: sessionId! },
+    trpc.shelf.summaryStats.useQuery(
+      {
+        sessionId: sessionId!,
+        category: selectedCategory || undefined,
+      },
       { enabled: sessionId != null }
     );
 
@@ -561,7 +564,7 @@ export default function ShelfPerspective() {
         <StatCard
           title="货架总数"
           value={isLoading ? "…" : fmtNumber(stats?.totalShelfCodes)}
-          subtitle="组"
+          subtitle={selectedCategory ? `属于「${selectedCategory}」的货架` : "全场货架"}
           icon={<Package size={22} />}
           color="#4f46e5"
           bgColor="#eef2ff"
@@ -569,26 +572,26 @@ export default function ShelfPerspective() {
         <StatCard
           title="商品数量"
           value={isLoading ? "…" : fmtNumber(stats?.totalProductCodes)}
-          subtitle="SKU"
+          subtitle={selectedCategory ? `「${selectedCategory}」 SKU` : "全场 SKU"}
           icon={<ShoppingCart size={22} />}
           color="#0891b2"
           bgColor="#ecfeff"
         />
         <StatCard
-          title="销售总金额"
-          value={isLoading ? "…" : `¥ ${fmtAmount(stats?.totalSalesAmount)}`}
-          subtitle="元"
-          icon={<TrendingUp size={22} />}
-          color="#059669"
-          bgColor="#ecfdf5"
-        />
-        <StatCard
-          title="储位记录数"
-          value={isLoading ? "…" : fmtNumber(stats?.totalRows)}
-          subtitle="条储位记录"
+          title="排面动效率"
+          value={isLoading ? "…" : (stats?.facingActivityRate != null ? `${stats.facingActivityRate}%` : "—")}
+          subtitle={isLoading ? "" : (stats ? `${fmtNumber(stats.activeFacings)} / ${fmtNumber(stats.totalFacings)} 面` : "")}
           icon={<BarChart3 size={22} />}
           color="#d97706"
           bgColor="#fffbeb"
+        />
+        <StatCard
+          title="销售总金额"
+          value={isLoading ? "…" : `¥ ${fmtAmount(stats?.totalSalesAmount)}`}
+          subtitle={selectedCategory ? `「${selectedCategory}」销售额` : "全场销售额"}
+          icon={<TrendingUp size={22} />}
+          color="#059669"
+          bgColor="#ecfdf5"
         />
       </div>
 
