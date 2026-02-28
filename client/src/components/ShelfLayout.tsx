@@ -14,6 +14,8 @@ import {
   KeyRound,
   Shield,
   Users,
+  Building2,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -89,10 +91,17 @@ interface ShelfLayoutProps {
 export default function ShelfLayout({ children }: ShelfLayoutProps) {
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { admin, logout: adminLogout } = useAdmin();
+  const [customerServiceOpen, setCustomerServiceOpen] = useState(false);
+  const { admin, logout: adminLogout, selectedTenantId, setSelectedTenantId } = useAdmin();
   const { tenant, logout: tenantLogout } = useTenant();
   // tRPC logout 仅用于清除旧的 Manus OAuth cookie（如果存在）
   const logoutMutation = trpc.auth.logout.useMutation();
+
+  // 管理员时加载租户列表（用于客户服务切换器）
+  const { data: tenantList = [] } = trpc.tenantAdmin.list.useQuery(undefined, {
+    enabled: Boolean(admin),
+    staleTime: 60_000,
+  });
 
   const handleAdminLogout = async () => {
     // 清除管理员会话
@@ -119,6 +128,13 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
     : tenant?.displayName
     ? tenant.displayName.charAt(0).toUpperCase()
     : "T";
+
+  // 当前选中的租户名称
+  const selectedTenantName = selectedTenantId === null
+    ? "管理员（自己）"
+    : tenantList.find((t: any) => t.id === selectedTenantId)?.displayName
+      || tenantList.find((t: any) => t.id === selectedTenantId)?.licenseKey
+      || `租户 #${selectedTenantId}`;
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -176,11 +192,11 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
         </div>
 
         {/* 导航区域 */}
-        <nav className="flex-1 px-3 py-6 flex flex-col min-h-0">
+        <nav className="flex-1 px-3 py-6 flex flex-col min-h-0 overflow-y-auto">
           <p className="px-3 mb-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex-shrink-0" style={{fontSize: '17px'}}>
             功能模块
           </p>
-          <div className="flex flex-col justify-around flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin" style={{paddingTop: '16px', paddingBottom: '15px'}}>
+          <div className="flex flex-col justify-around flex-1 overflow-x-hidden scrollbar-thin" style={{paddingTop: '16px', paddingBottom: '15px'}}>
           {navItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = location === item.path;
@@ -235,6 +251,68 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
             );
           })}
           </div>
+
+          {/* 客户服务切换器（仅管理员可见） */}
+          {isAdmin && (
+            <div className="mt-4 pt-4 border-t border-border flex-shrink-0">
+              <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <Building2 className="w-3 h-3" />
+                客户服务
+              </p>
+              <div className="relative">
+                <button
+                  onClick={() => setCustomerServiceOpen(!customerServiceOpen)}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 hover:border-indigo-200 transition-all text-sm"
+                >
+                  <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                    <Building2 className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="flex-1 text-left text-xs font-medium text-indigo-800 truncate">
+                    {selectedTenantName}
+                  </span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-indigo-400 transition-transform ${customerServiceOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {/* 下拉列表 */}
+                {customerServiceOpen && (
+                  <div className="absolute bottom-full left-0 right-0 mb-1 bg-white rounded-xl border border-border shadow-lg z-50 max-h-48 overflow-y-auto">
+                    {/* 管理员自己 */}
+                    <button
+                      onClick={() => { setSelectedTenantId(null); setCustomerServiceOpen(false); }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-accent transition-colors ${selectedTenantId === null ? "bg-indigo-50 text-indigo-700 font-semibold" : "text-foreground"}`}
+                    >
+                      <Shield className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="truncate">管理员（自己）</span>
+                    </button>
+
+                    {/* 租户列表 */}
+                    {tenantList.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-muted-foreground">暂无租户数据</div>
+                    ) : (
+                      tenantList.map((t: any) => (
+                        <button
+                          key={t.id}
+                          onClick={() => { setSelectedTenantId(t.id); setCustomerServiceOpen(false); }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-accent transition-colors ${selectedTenantId === t.id ? "bg-indigo-50 text-indigo-700 font-semibold" : "text-foreground"}`}
+                        >
+                          <Building2 className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground" />
+                          <div className="flex-1 min-w-0 text-left">
+                            <div className="truncate">{t.displayName || t.licenseKey}</div>
+                            {t.displayName && (
+                              <div className="text-muted-foreground truncate">{t.licenseKey}</div>
+                            )}
+                          </div>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${t.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                            {t.status === 'active' ? '活跃' : t.status === 'expired' ? '已过期' : '已停用'}
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* 租户使用情况提示 */}
@@ -340,6 +418,17 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
           <div className="hidden lg:flex items-center gap-3">
             {isAdmin && admin ? (
               <>
+                {/* 客户服务当前选中提示 */}
+                {selectedTenantId !== null && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100">
+                    <Building2 className="w-3.5 h-3.5 text-indigo-500" />
+                    <span className="text-xs text-indigo-700 font-medium">
+                      {tenantList.find((t: any) => t.id === selectedTenantId)?.displayName
+                        || tenantList.find((t: any) => t.id === selectedTenantId)?.licenseKey
+                        || `租户 #${selectedTenantId}`}
+                    </span>
+                  </div>
+                )}
                 <span className="text-sm text-muted-foreground">{admin.username}</span>
                 <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700">
                   管理员

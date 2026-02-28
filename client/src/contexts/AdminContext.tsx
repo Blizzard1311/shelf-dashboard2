@@ -13,6 +13,9 @@ export type AdminInfo = {
 type AdminContextType = {
   admin: AdminInfo | null;
   loading: boolean;
+  /** 管理员当前选中查看的租户 ID（null = 查看管理员自己的数据） */
+  selectedTenantId: number | null;
+  setSelectedTenantId: (id: number | null) => void;
   login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -23,6 +26,7 @@ const AdminContext = createContext<AdminContextType | null>(null);
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [admin, setAdmin] = useState<AdminInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedTenantId, setSelectedTenantId] = useState<number | null>(null);
 
   // 检查当前管理员会话
   const refresh = useCallback(async () => {
@@ -68,10 +72,11 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       // ignore
     }
     setAdmin(null);
+    setSelectedTenantId(null);
   }, []);
 
   return (
-    <AdminContext.Provider value={{ admin, loading, login, logout, refresh }}>
+    <AdminContext.Provider value={{ admin, loading, selectedTenantId, setSelectedTenantId, login, logout, refresh }}>
       {children}
     </AdminContext.Provider>
   );

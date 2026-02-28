@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useLocation } from "wouter";
+import { useAdmin } from "@/contexts/AdminContext";
 import { trpc } from "@/lib/trpc";
 import {
   AlertCircle,
@@ -284,9 +285,13 @@ export default function GridChart() {
   const [planMode, setPlanMode] = useState<"category" | "urgent">("category");
   const [showPlanPanel, setShowPlanPanel] = useState(false);
 
-  // 获取最新 sessionId
+  const { admin, selectedTenantId } = useAdmin();
+
+  // 获取最新 sessionId（管理员可按租户切换）
   const { data: sessionData, isLoading: sessionLoading } =
-    trpc.shelf.latestSession.useQuery();
+    trpc.shelf.latestSession.useQuery(
+      admin ? { tenantId: selectedTenantId ?? undefined } : undefined
+    );
   const sessionId = sessionData?.sessionId ?? null;
 
   // 全场汇总指标

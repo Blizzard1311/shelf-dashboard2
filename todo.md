@@ -219,3 +219,12 @@
 ### 安全
 - [x] 管理员密码存储在环境变量中（不在前端代码中暴露）
 - [x] 登录接口添加速率限制（5次失败锁定15分钟）
+
+## 客户服务切换器（管理员查看任意租户数据）
+
+- [x] 后端：tenantAdmin.list 接口返回含最近上传时间的租户列表
+- [x] 前端：AdminContext 新增 selectedTenantId 状态（管理员当前查看的租户）
+- [x] 前端：侧边栏新增“客户服务”切换器（管理员专用，下拉选择租户，默认为“管理员自己”）
+- [x] 前端：ShelfPerspective 和 GridChart 传入 selectedTenantId 到 latestSession 查询
+- [ ] 前端：DataUpload 上传历史按 selectedTenantId 过滤（管理员模式下只显示当前选中租户的历史）
+- [ ] 推送到 GitHub 并部署到 Railway

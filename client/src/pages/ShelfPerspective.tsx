@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
+import { useAdmin } from "@/contexts/AdminContext";
 import { trpc } from "@/lib/trpc";
 import {
   BarChart3,
@@ -425,9 +426,13 @@ export default function ShelfPerspective() {
   const [page, setPage] = useState(1);
   const [, setLocation] = useLocation();
 
-  // 获取最新 sessionId
+  const { admin, selectedTenantId } = useAdmin();
+
+  // 获取最新 sessionId（管理员可按租户切换）
   const { data: sessionData, isLoading: sessionLoading } =
-    trpc.shelf.latestSession.useQuery();
+    trpc.shelf.latestSession.useQuery(
+      admin ? { tenantId: selectedTenantId ?? undefined } : undefined
+    );
   const sessionId = sessionData?.sessionId ?? null;
 
   // 看板统计（支持大类筛选联动）
