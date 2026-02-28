@@ -502,14 +502,14 @@ export function generateLicenseKeyString(): string {
 export async function createLicenseKey(data: { maxUploads: number; validDays: number; note?: string }): Promise<LicenseKey> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
-  const key = generateLicenseKeyString();
+  const licenseKeyStr = generateLicenseKeyString();
   await db.insert(licenseKeys).values({
-    key,
+    key: licenseKeyStr,
     maxUploads: data.maxUploads,
     validDays: data.validDays,
     note: data.note ?? null,
   });
-  const rows = await db.select().from(licenseKeys).where(eq(licenseKeys.key, key)).limit(1);
+  const rows = await db.select().from(licenseKeys).where(eq(licenseKeys.key, licenseKeyStr)).limit(1);
   return rows[0];
 }
 
