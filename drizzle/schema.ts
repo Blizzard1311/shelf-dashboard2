@@ -1,7 +1,9 @@
 import { bigint, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
- * Core user table backing auth flow (管理员通过 Manus OAuth 登录).
+ * Core user table backing auth flow.
+ * 管理员通过账号密码登录（/api/admin/login），不再依赖 Manus OAuth。
+ * 此表主要用于兼容性保留，管理员会话通过本地 JWT 管理。
  */
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),

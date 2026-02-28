@@ -164,8 +164,9 @@ describe("auth.logout clears both cookies", () => {
     const result = await caller.auth.logout();
 
     expect(result).toEqual({ success: true });
-    expect(clearedCookies).toHaveLength(2);
+    expect(clearedCookies).toHaveLength(3);
     expect(clearedCookies[0]?.name).toBe(COOKIE_NAME);
     expect(clearedCookies[1]?.name).toBe(TENANT_COOKIE_NAME);
+    expect(clearedCookies[2]?.name).toBe("admin_session_id");
   });
 });

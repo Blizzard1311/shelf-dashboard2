@@ -56,6 +56,7 @@ export const appRouter = router({
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       ctx.res.clearCookie(TENANT_COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie("admin_session_id", { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
   }),

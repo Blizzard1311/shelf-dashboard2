@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAdmin } from "@/contexts/AdminContext";
 import { useTenant } from "@/contexts/TenantContext";
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import {
   Upload,
@@ -11,7 +10,6 @@ import {
   Menu,
   X,
   LogOut,
-  User,
   ChevronRight,
   KeyRound,
   Shield,
@@ -19,7 +17,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { toast } from "sonner";
 
 type NavItem = {
   key: string;
@@ -92,16 +89,17 @@ interface ShelfLayoutProps {
 export default function ShelfLayout({ children }: ShelfLayoutProps) {
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const { admin, logout: adminLogout } = useAdmin();
   const { tenant, logout: tenantLogout } = useTenant();
-  const logoutMutation = trpc.auth.logout.useMutation({
-    onSuccess: () => {
-      window.location.href = "/";
-    },
-  });
+  // tRPC logout 仅用于清除旧的 Manus OAuth cookie（如果存在）
+  const logoutMutation = trpc.auth.logout.useMutation();
 
-  const handleLogout = () => {
-    logoutMutation.mutate();
+  const handleAdminLogout = async () => {
+    // 清除管理员会话
+    await adminLogout();
+    // 同时清除旧的 Manus OAuth cookie（兼容性）
+    try { await logoutMutation.mutateAsync(); } catch { /* ignore */ }
+    window.location.href = "/";
   };
 
   const handleTenantLogout = async () => {
@@ -109,17 +107,15 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
     window.location.href = "/";
   };
 
-  const isAdmin = isAuthenticated && user?.role === 'admin';
+  const isAdmin = Boolean(admin);
 
   // 根据角色动态生成导航项
   const navItems: NavItem[] = isAdmin
     ? [...baseNavItems, ...adminNavItems]
     : baseNavItems;
 
-  const userInitial = user?.name
-    ? user.name.charAt(0).toUpperCase()
-    : user?.email
-    ? user.email.charAt(0).toUpperCase()
+  const userInitial = admin?.username
+    ? admin.username.charAt(0).toUpperCase()
     : tenant?.displayName
     ? tenant.displayName.charAt(0).toUpperCase()
     : "T";
@@ -156,21 +152,13 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
               boxShadow: "0 4px 12px oklch(0.55 0.18 260 / 0.4)",
             }}
           >
-            {/* 空间透视图标：三维货架透视效果 */}
             <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
-              {/* 后平面 */}
               <rect x="7" y="4" width="12" height="9" rx="0.5" stroke="white" strokeWidth="1.2" strokeOpacity="0.5" fill="none"/>
-              {/* 前平面 */}
               <rect x="3" y="10" width="12" height="9" rx="0.5" stroke="white" strokeWidth="1.4" fill="white" fillOpacity="0.15"/>
-              {/* 透视连接线 - 左上 */}
               <line x1="3" y1="10" x2="7" y2="4" stroke="white" strokeWidth="1" strokeOpacity="0.7"/>
-              {/* 透视连接线 - 右上 */}
               <line x1="15" y1="10" x2="19" y2="4" stroke="white" strokeWidth="1" strokeOpacity="0.7"/>
-              {/* 透视连接线 - 右下 */}
               <line x1="15" y1="19" x2="19" y2="13" stroke="white" strokeWidth="1" strokeOpacity="0.7"/>
-              {/* 货架横隔板 - 前 */}
               <line x1="3" y1="14" x2="15" y2="14" stroke="white" strokeWidth="1" strokeOpacity="0.8"/>
-              {/* 货架横隔板 - 后（透视缩短） */}
               <line x1="7" y1="7.5" x2="19" y2="7.5" stroke="white" strokeWidth="0.8" strokeOpacity="0.4"/>
             </svg>
           </div>
@@ -267,7 +255,36 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
 
         {/* 用户信息区域 */}
         <div className="px-3 py-4 border-t border-border">
-          {isAuthenticated && user ? (
+          {isAdmin && admin ? (
+            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/50">
+              <Avatar className="w-8 h-8 flex-shrink-0">
+                <AvatarFallback
+                  className="text-xs font-semibold text-white"
+                  style={{
+                    background: "linear-gradient(135deg, oklch(0.65 0.18 70), oklch(0.55 0.20 50))",
+                  }}
+                >
+                  {userInitial}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {admin.username}
+                </p>
+                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                  <Shield className="w-3 h-3" />
+                  管理员
+                </p>
+              </div>
+              <button
+                onClick={handleAdminLogout}
+                className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors flex-shrink-0"
+                title="退出登录"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : tenant ? (
             <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/50">
               <Avatar className="w-8 h-8 flex-shrink-0">
                 <AvatarFallback
@@ -281,36 +298,7 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">
-                  {user.name || user.email || "用户"}
-                </p>
-                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                  <Shield className="w-3 h-3" />
-                  {user.role === "admin" ? "管理员" : "普通用户"}
-                </p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors flex-shrink-0"
-                title="退出登录"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          ) : tenant ? (
-            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/50">
-              <Avatar className="w-8 h-8 flex-shrink-0">
-                <AvatarFallback
-                  className="text-xs font-semibold text-white"
-                  style={{
-                    background: "linear-gradient(135deg, oklch(0.65 0.15 185), oklch(0.55 0.18 200))",
-                  }}
-                >
-                  {userInitial}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">
-                  {tenant.displayName || '租户'}
+                  {tenant.displayName || "租户用户"}
                 </p>
                 <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
                   <KeyRound className="w-3 h-3" />
@@ -325,96 +313,71 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
-          ) : (
-            <a href={getLoginUrl()}>
-              <Button
-                className="w-full"
-                style={{
-                  background: "linear-gradient(135deg, oklch(0.55 0.18 260), oklch(0.50 0.20 280))",
-                  boxShadow: "0 2px 8px oklch(0.55 0.18 260 / 0.35)",
-                }}
-              >
-                <User className="w-4 h-4 mr-2" />
-                登录
-              </Button>
-            </a>
-          )}
+          ) : null}
         </div>
       </aside>
 
       {/* 主内容区域 */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* 顶部 Header */}
-        <header
-          className="flex items-center gap-3 px-4 lg:px-6 py-3 bg-white border-b border-border flex-shrink-0"
-          style={{ boxShadow: "0 1px 8px oklch(0 0 0 / 0.05)" }}
-        >
+        {/* 顶部栏 */}
+        <header className="h-14 flex items-center justify-between px-4 lg:px-6 border-b border-border bg-white flex-shrink-0">
           {/* 移动端汉堡菜单 */}
           <button
             className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors"
             onClick={() => setSidebarOpen(true)}
           >
-            <Menu className="w-5 h-5 text-foreground" />
+            <Menu className="w-5 h-5 text-muted-foreground" />
           </button>
 
-          {/* 当前页面标题 */}
-          <div className="flex-1 min-w-0">
-            {navItems.map((item) =>
-              location === item.path ? (
-                <div key={item.key} className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-foreground" style={{fontSize: '20px'}}>{item.label}</span>
-                  <span className="hidden sm:inline text-xs text-muted-foreground" style={{fontSize: '14px'}}>
-                    — {item.description}
-                  </span>
-                </div>
-              ) : null
-            )}
-            {location === "/" && (
-              <span className="text-sm font-semibold text-foreground">仪表盘</span>
-            )}
+          {/* 页面标题 */}
+          <div className="flex-1 lg:flex-none">
+            <h2 className="text-sm font-semibold text-foreground lg:hidden">
+              {navItems.find(n => n.path === location)?.label ?? "货架效率透析系统"}
+            </h2>
           </div>
 
           {/* 右侧用户信息（桌面端） */}
-          {(isAuthenticated && user) ? (
-            <div className="hidden lg:flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">
-                {user.name || user.email}
-              </span>
-              {isAdmin && (
-                <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">管理员</span>
-              )}
-              <Avatar className="w-7 h-7">
-                <AvatarFallback
-                  className="text-xs font-semibold text-white"
-                  style={{
-                    background: "linear-gradient(135deg, oklch(0.55 0.18 260), oklch(0.50 0.20 280))",
-                  }}
+          <div className="hidden lg:flex items-center gap-3">
+            {isAdmin && admin ? (
+              <>
+                <span className="text-sm text-muted-foreground">{admin.username}</span>
+                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700">
+                  管理员
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleAdminLogout}
+                  className="text-muted-foreground hover:text-foreground"
                 >
-                  {userInitial}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          ) : tenant ? (
-            <div className="hidden lg:flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">
-                {tenant.displayName || tenant.licenseKey}
-              </span>
-              <Avatar className="w-7 h-7">
-                <AvatarFallback
-                  className="text-xs font-semibold text-white"
-                  style={{
-                    background: "linear-gradient(135deg, oklch(0.65 0.15 185), oklch(0.55 0.18 200))",
-                  }}
+                  <LogOut className="w-4 h-4 mr-1" />
+                  退出
+                </Button>
+              </>
+            ) : tenant ? (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  {tenant.displayName || "租户用户"}
+                </span>
+                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                  序列号用户
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleTenantLogout}
+                  className="text-muted-foreground hover:text-foreground"
                 >
-                  {userInitial}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          ) : null}
+                  <LogOut className="w-4 h-4 mr-1" />
+                  退出
+                </Button>
+              </>
+            ) : null}
+          </div>
         </header>
 
         {/* 页面内容 */}
-        <main className="flex-1 overflow-y-auto bg-background">
+        <main className="flex-1 overflow-auto">
           {children}
         </main>
       </div>

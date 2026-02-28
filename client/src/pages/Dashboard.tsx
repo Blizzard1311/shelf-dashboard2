@@ -1,8 +1,7 @@
 import { Link } from "wouter";
 import { Upload, BarChart3, Grid3X3, ArrowRight, TrendingUp, Database, Activity } from "lucide-react";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
-import { Button } from "@/components/ui/button";
+import { useAdmin } from "@/contexts/AdminContext";
+import { useTenant } from "@/contexts/TenantContext";
 
 const featureCards = [
   {
@@ -21,7 +20,7 @@ const featureCards = [
     key: "perspective",
     label: "货架卡看板",
     icon: BarChart3,
-    path: "/perspective",
+    path: "/shelf",
     gradient: "from-violet-500 to-purple-600",
     bgGradient: "linear-gradient(135deg, oklch(0.55 0.18 300), oklch(0.48 0.22 310))",
     shadowColor: "oklch(0.55 0.18 300 / 0.35)",
@@ -51,54 +50,11 @@ const statCards = [
 ];
 
 export default function Dashboard() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { admin } = useAdmin();
+  const { tenant } = useTenant();
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="flex flex-col items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-full border-3 border-t-transparent animate-spin"
-            style={{ borderColor: "oklch(0.55 0.18 260)", borderTopColor: "transparent" }}
-          />
-          <p className="text-sm text-muted-foreground">加载中...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center h-full px-4">
-        <div className="text-center max-w-sm">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
-            style={{
-              background: "linear-gradient(135deg, oklch(0.55 0.18 260), oklch(0.50 0.20 280))",
-              boxShadow: "0 8px 24px oklch(0.55 0.18 260 / 0.35)",
-            }}
-          >
-            <Database className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-xl font-bold text-foreground mb-2">请先登录</h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            货架数据平台是内部系统，需要登录后才能访问。
-          </p>
-          <a href={getLoginUrl()}>
-            <Button
-              className="px-6"
-              style={{
-                background: "linear-gradient(135deg, oklch(0.55 0.18 260), oklch(0.50 0.20 280))",
-                boxShadow: "0 4px 12px oklch(0.55 0.18 260 / 0.4)",
-              }}
-            >
-              立即登录
-            </Button>
-          </a>
-        </div>
-      </div>
-    );
-  }
+  // 显示名称：管理员用用户名，租户用显示名称
+  const displayName = admin?.username || tenant?.displayName || "用户";
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -122,7 +78,7 @@ export default function Dashboard() {
         <div className="relative z-10">
           <p className="text-white/70 text-sm mb-1">欢迎回来</p>
           <h2 className="text-white text-xl lg:text-2xl font-bold mb-1">
-            {user?.name || user?.email || "用户"}
+            {displayName}
           </h2>
           <p className="text-white/60 text-sm">货架效率透析系统 · 内部管理系统</p>
         </div>

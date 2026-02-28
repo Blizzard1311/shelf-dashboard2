@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Download, Upload, CheckCircle2, XCircle, FileSpreadsheet, BarChart2, Package } from "lucide-react";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAdmin } from "@/contexts/AdminContext";
 import { useTenant } from "@/contexts/TenantContext";
-import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -30,10 +29,10 @@ interface ParseResult {
 }
 
 export default function DataUpload() {
-  const { isAuthenticated: oauthAuthenticated, loading: authLoading } = useAuth();
+  const { admin, loading: adminLoading } = useAdmin();
   const { tenant, loading: tenantLoading } = useTenant();
-  const loading = authLoading || tenantLoading;
-  const isAuthenticated = oauthAuthenticated || !!tenant;
+  const loading = adminLoading || tenantLoading;
+  const isAuthenticated = !!admin || !!tenant;
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<ParseResult | null>(null);
@@ -136,11 +135,6 @@ export default function DataUpload() {
         <div className="text-center max-w-sm">
           <h2 className="text-lg font-bold text-foreground mb-2">请先登录</h2>
           <p className="text-sm text-muted-foreground mb-4">访问此页面需要登录。</p>
-          <a href={getLoginUrl()}>
-            <Button style={{ background: "linear-gradient(135deg, oklch(0.55 0.18 260), oklch(0.50 0.20 280))" }}>
-              立即登录
-            </Button>
-          </a>
         </div>
       </div>
     );

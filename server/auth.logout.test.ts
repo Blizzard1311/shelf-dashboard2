@@ -50,8 +50,8 @@ describe("auth.logout", () => {
     const result = await caller.auth.logout();
 
     expect(result).toEqual({ success: true });
-    // logout 现在清除两个 cookie：会话 cookie + 租户 cookie
-    expect(clearedCookies).toHaveLength(2);
+    // logout 现在清除三个 cookie：会话 cookie + 租户 cookie + 管理员 cookie
+    expect(clearedCookies).toHaveLength(3);
     expect(clearedCookies[0]?.name).toBe(COOKIE_NAME);
     expect(clearedCookies[0]?.options).toMatchObject({
       maxAge: -1,
@@ -62,6 +62,10 @@ describe("auth.logout", () => {
     });
     expect(clearedCookies[1]?.name).toBe(TENANT_COOKIE_NAME);
     expect(clearedCookies[1]?.options).toMatchObject({
+      maxAge: -1,
+    });
+    expect(clearedCookies[2]?.name).toBe("admin_session_id");
+    expect(clearedCookies[2]?.options).toMatchObject({
       maxAge: -1,
     });
   });

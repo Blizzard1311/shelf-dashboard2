@@ -5,7 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider, useTenant } from "./contexts/TenantContext";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { AdminProvider, useAdmin } from "./contexts/AdminContext";
 import ShelfLayout from "./components/ShelfLayout";
 import Dashboard from "./pages/Dashboard";
 import DataUpload from "./pages/DataUpload";
@@ -18,7 +18,7 @@ import TenantLogin from "./pages/TenantLogin";
 import LicenseManage from "./pages/LicenseManage";
 import TenantDataManage from "./pages/TenantDataManage";
 
-/** 主路由：需要认证（管理员 OAuth 或 租户序列号） */
+/** 主路由：需要认证（管理员账号密码 或 租户序列号） */
 function AuthenticatedRouter() {
   return (
     <Switch>
@@ -48,13 +48,13 @@ function AuthenticatedRouter() {
   );
 }
 
-/** 认证门卫：检查是否已登录（管理员 or 租户） */
+/** 认证门卫：检查是否已登录（管理员账号密码 or 租户序列号） */
 function AuthGate() {
-  const { user, loading: authLoading } = useAuth();
+  const { admin, loading: adminLoading } = useAdmin();
   const { tenant, loading: tenantLoading } = useTenant();
 
   // 两个认证源都在加载中
-  if (authLoading || tenantLoading) {
+  if (adminLoading || tenantLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -65,12 +65,12 @@ function AuthGate() {
     );
   }
 
-  // 管理员已登录（Manus OAuth）或 租户已登录（序列号）
-  if (user || tenant) {
+  // 管理员已登录（账号密码）或 租户已登录（序列号）
+  if (admin || tenant) {
     return <AuthenticatedRouter />;
   }
 
-  // 未登录：显示序列号登录页
+  // 未登录：显示登录页
   return <TenantLogin />;
 }
 
@@ -78,12 +78,14 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
-        <TenantProvider>
-          <TooltipProvider>
-            <Toaster />
-            <AuthGate />
-          </TooltipProvider>
-        </TenantProvider>
+        <AdminProvider>
+          <TenantProvider>
+            <TooltipProvider>
+              <Toaster />
+              <AuthGate />
+            </TooltipProvider>
+          </TenantProvider>
+        </AdminProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

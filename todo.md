@@ -194,3 +194,28 @@
 ## Bug 修复：全应用频繁刷新问题
 - [x] 排查应用的 QueryClient 全局配置，没有找到 refetchInterval 设置
 - [x] 优化 main.tsx 中的 QueryClient 配置：添加 refetchOnMount=false、refetchInterval=undefined、gcTime=30min，禁用所有自动轮询機制
+
+## 替换 Manus OAuth 为自定义管理员账号密码登录
+
+### 目标
+完全移除对 portal.manus.im 的依赖，改为自定义账号密码认证，确保中国大陆用户无需 VPN 即可使用。
+
+### 后端改造
+- [x] 新增管理员账号密码登录路由（/api/admin/login）
+- [x] 新增管理员登出路由（/api/admin/logout）
+- [x] 新增管理员会话验证（/api/admin/me）
+- [x] 管理员凭据从环境变量读取（ADMIN_USERNAME / ADMIN_PASSWORD）
+- [x] 添加登录失败次数限制（防暴力破解，5次失败锁定15分钟）
+- [x] 更新 context.ts：从管理员 JWT 会话中读取用户信息（不再调用 OAuth SDK）
+- [x] 保留 OAuth 路由但不再依赖外部 OAuth 服务
+
+### 前端改造
+- [x] 登录页面新增管理员账号密码登录入口（替换 Manus OAuth 链接）
+- [x] 管理员登录表单（用户名 + 密码，含显示/隐藏密码按钮）
+- [x] 新增 AdminContext 管理管理员登录状态
+- [x] 移除所有对 getLoginUrl()（portal.manus.im）的引用
+- [x] Dashboard、DataUpload 等页面移除 useAuth 依赖
+
+### 安全
+- [x] 管理员密码存储在环境变量中（不在前端代码中暴露）
+- [x] 登录接口添加速率限制（5次失败锁定15分钟）

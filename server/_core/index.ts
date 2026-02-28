@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import uploadRouter from "../upload.route";
 import tenantAuthRouter from "../tenant-auth";
+import adminAuthRouter from "../admin-auth";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -41,6 +42,8 @@ async function startServer() {
   app.use("/api/upload", uploadRouter);
   // Tenant auth routes (license key login)
   app.use("/api/tenant", tenantAuthRouter);
+  // Admin auth routes (username/password login, replaces Manus OAuth)
+  app.use("/api/admin", adminAuthRouter);
   // tRPC API
   app.use(
     "/api/trpc",
