@@ -227,4 +227,12 @@
 - [x] 前端：侧边栏新增“客户服务”切换器（管理员专用，下拉选择租户，默认为“管理员自己”）
 - [x] 前端：ShelfPerspective 和 GridChart 传入 selectedTenantId 到 latestSession 查询
 - [ ] 前端：DataUpload 上传历史按 selectedTenantId 过滤（管理员模式下只显示当前选中租户的历史）
+- [x] 推送到 GitHub 并部署到 Railway
+
+
+## 修复客户服务切换器选择事件
+
+- [x] 修复 ShelfLayout 中的选择框 onChange 事件处理
+- [x] 修复 ShelfPerspective 和 GridChart 中的 latestSession 查询参数（区分 null 和 undefined）
+- [x] 验证货架看板和生命力透视能正确刷新数据（29 个测试全部通过）
 - [ ] 推送到 GitHub 并部署到 Railway

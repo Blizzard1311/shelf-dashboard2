@@ -431,7 +431,7 @@ export default function ShelfPerspective() {
   // 获取最新 sessionId（管理员可按租户切换）
   const { data: sessionData, isLoading: sessionLoading } =
     trpc.shelf.latestSession.useQuery(
-      admin ? { tenantId: selectedTenantId ?? undefined } : undefined
+      admin ? (selectedTenantId !== null ? { tenantId: selectedTenantId } : {}) : undefined
     );
   const sessionId = sessionData?.sessionId ?? null;
 
