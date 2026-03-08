@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, licenseKey, status FROM license_keys LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute SELECT id, licenseKey, status FROM license_keys LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "licenseKey": "SH-WXKP-DCDU-V6PT",
+      "status": "used"
+    },
+    {
+      "id": "30001",
+      "licenseKey": "SH-ETY9-8FUK-HCVQ",
+      "status": "used"
+    },
+    {
+      "id": "30002",
+      "licenseKey": "SH-ARRT-2CEV-TR95",
+      "status": "active"
+    },
+    {
+      "id": "60001",
+      "licenseKey": "SH-DJYW-XAHH-UY5Q",
+      "status": "active"
+    },
+    {
+      "id": "60002",
+      "licenseKey": "SH-G77C-FVSL-4ABQ",
+      "status": "active"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlicenseKey\tstatus\n1\tSH-WXKP-DCDU-V6PT\tused\n30001\tSH-ETY9-8FUK-HCVQ\tused\n30002\tSH-ARRT-2CEV-TR95\tactive\n60001\tSH-DJYW-XAHH-UY5Q\tactive\n60002\tSH-G77C-FVSL-4ABQ\tactive\n",
+  "stderr": "",
+  "execution_time_ms": 1613
+}

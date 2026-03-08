@@ -10,7 +10,7 @@ type LoginMode = "tenant" | "admin";
 
 export default function TenantLogin() {
   const { login: tenantLogin } = useTenant();
-  const { login: adminLogin } = useAdmin();
+  const { login: adminLogin, logout: adminLogout } = useAdmin();
 
   const [mode, setMode] = useState<LoginMode>("tenant");
 
@@ -34,6 +34,8 @@ export default function TenantLogin() {
     }
     setError("");
     setLoading(true);
+    // 清除管理员状态，确保租户登录时不会同时保留管理员身份
+    await adminLogout();
     const result = await tenantLogin(licenseKey.trim(), displayName.trim() || undefined);
     setLoading(false);
     if (!result.success) {

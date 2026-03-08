@@ -236,3 +236,10 @@
 - [x] 修复 ShelfPerspective 和 GridChart 中的 latestSession 查询参数（区分 null 和 undefined）
 - [x] 验证货架看板和生命力透视能正确刷新数据（29 个测试全部通过）
 - [ ] 推送到 GitHub 并部署到 Railway
+
+## 隐藏租户用户的管理功能菜单
+
+- [x] 检查 ShelfLayout 中的菜单渲染逻辑
+- [x] 修复 TenantLogin 中的租户登录逻辑，清除管理员状态
+- [x] 验证修复正常（29 个后端测试全部通过）
+- [ ] 推送到 GitHub 并部署到 Railway
