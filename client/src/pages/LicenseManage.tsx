@@ -11,6 +11,7 @@ import {
   Plus,
   Copy,
   Ban,
+  Trash2,
   Loader2,
   Clock,
   Upload,
@@ -56,6 +57,16 @@ export default function LicenseManage() {
     },
   });
 
+  const deleteMutation = trpc.license.delete.useMutation({
+    onSuccess: () => {
+      toast.success("序列号已删除");
+      utils.license.list.invalidate();
+    },
+    onError: (err) => {
+      toast.error("删除失败", { description: err.message });
+    },
+  });
+
   const handleCreate = async () => {
     setCreating(true);
     await createMutation.mutateAsync({
@@ -74,6 +85,12 @@ export default function LicenseManage() {
   const handleDisable = (id: number, key: string) => {
     if (confirm(`确定要停用序列号 ${key} 吗？停用后关联的租户也将无法使用。`)) {
       disableMutation.mutate({ id });
+    }
+  };
+
+  const handleDelete = (id: number, key: string) => {
+    if (confirm(`确定要删除序列号 ${key} 吗？此操作将同时删除该序列号关联的所有租户数据，且无法恢复。`)) {
+      deleteMutation.mutate({ id });
     }
   };
 
@@ -221,17 +238,35 @@ export default function LicenseManage() {
                     </Badge>
 
                     {/* 操作 */}
-                    {(lic.status === "active" || lic.status === "used") && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDisable(lic.id, lic.key)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Ban className="w-3.5 h-3.5 mr-1" />
-                        停用
-                      </Button>
-                    )}
+                    <div className="flex gap-2">
+                      {(lic.status === "active" || lic.status === "used") && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDisable(lic.id, lic.key)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Ban className="w-3.5 h-3.5 mr-1" />
+                          停用
+                        </Button>
+                      )}
+                      {lic.status === "disabled" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(lic.id, lic.key)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          disabled={deleteMutation.isPending}
+                        >
+                          {deleteMutation.isPending ? (
+                            <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          )}
+                          删除
+                        </Button>
+                      )}
+                    </div>
 
                     {/* 创建时间 */}
                     <span className="text-xs text-muted-foreground whitespace-nowrap">

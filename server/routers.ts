@@ -22,6 +22,7 @@ import {
   createLicenseKey,
   getLicenseKeyList,
   disableLicenseKey,
+  deleteLicenseKey,
   getTenantList,
   getTenantById,
   getLatestSessionIdForTenant,
@@ -86,6 +87,21 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await disableLicenseKey(input.id);
         return { success: true };
+      }),
+
+    // 删除停用的序列号
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        try {
+          await deleteLicenseKey(input.id);
+          return { success: true };
+        } catch (err) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: err instanceof Error ? err.message : 'Delete failed',
+          });
+        }
       }),
   }),
 

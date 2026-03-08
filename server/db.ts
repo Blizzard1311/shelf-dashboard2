@@ -661,3 +661,33 @@ export async function expireOverdueTenants(): Promise<number> {
   );
   return (result as any)[0]?.affectedRows ?? 0;
 }
+
+
+/** 删除停用的序列号及其关联的租户数据 */
+export async function deleteLicenseKey(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  
+  // 检查序列号是否存在且是停用状态
+  const license = await db.select().from(licenseKeys).where(eq(licenseKeys.id, id)).limit(1);
+  if (license.length === 0) {
+    throw new Error('序列号不存在');
+  }
+  if (license[0].status !== 'disabled') {
+    throw new Error('仅能删除停用状态的序列号');
+  }
+  
+  // 删除关联的租户数据
+  const relatedTenants = await db.select().from(tenants).where(eq(tenants.licenseKeyId, id));
+  for (const t of relatedTenants) {
+    // 删除该租户的所有上传数据
+    await db.delete(shelfData).where(eq(shelfData.tenantId, t.id));
+    // 删除该租户的所有上传会话
+    await db.delete(uploadSessions).where(eq(uploadSessions.tenantId, t.id));
+    // 删除该租户记录
+    await db.delete(tenants).where(eq(tenants.id, t.id));
+  }
+  
+  // 删除序列号
+  await db.delete(licenseKeys).where(eq(licenseKeys.id, id));
+}

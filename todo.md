@@ -242,4 +242,25 @@
 - [x] 检查 ShelfLayout 中的菜单渲染逻辑
 - [x] 修复 TenantLogin 中的租户登录逻辑，清除管理员状态
 - [x] 验证修复正常（29 个后端测试全部通过）
-- [ ] 推送到 GitHub 并部署到 Railway
+- [x] 推送到 GitHub 并部署到 Railway
+
+
+## 三个功能改进
+
+### 1. 将"租户数据"改为"用户信息"
+- [x] 更新 ShelfLayout.tsx 中的菜单项文本
+- [x] 更新 TenantDataManage.tsx 页面标题
+- [x] 更新相关路由和 API 端点名称
+
+### 2. 改进租户用户名称显示
+- [x] 修改 TenantLogin.tsx，使"门店/用户名称"字段变为必填
+- [x] 后端已支持保存 displayName 到数据库
+- [x] 修改 ShelfLayout.tsx，显示 displayName 而不是"租户用户"
+- [x] 修改 TenantDataManage.tsx，显示租户名称并提示"不可修改"
+- [x] 验证租户名称显示正确（29 个测试全部通过）
+
+### 3. 序列号管理增加删除功能
+- [x] 修改后端 API，添加"停用"和"删除"序列号的接口
+- [x] 修改 LicenseManage.tsx，添加"停用"和"删除"按马
+- [x] 实现删除逻辑：删除停用状态的序列号及相关租户数据
+- [x] 验证删除功能（29 个测试全部通过）

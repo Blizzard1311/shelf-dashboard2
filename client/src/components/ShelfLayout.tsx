@@ -74,12 +74,12 @@ const adminNavItems: NavItem[] = [
   },
   {
     key: "tenants",
-    label: "租户数据",
+    label: "用户信息",
     icon: Users,
     path: "/admin/tenants",
     gradient: "from-rose-500 to-pink-600",
     shadowColor: "oklch(0.60 0.18 10)",
-    description: "查看与导出租户数据",
+    description: "查看与管理用户信息",
     adminOnly: true,
   },
 ];
@@ -376,7 +376,7 @@ export default function ShelfLayout({ children }: ShelfLayoutProps) {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">
-                  {tenant.displayName || "租户用户"}
+                  {tenant.displayName}
                 </p>
                 <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
                   <KeyRound className="w-3 h-3" />

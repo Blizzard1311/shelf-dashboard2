@@ -80,7 +80,7 @@ export default function TenantDataManage() {
 
       XLSX.utils.book_append_sheet(wb, ws, "货架数据");
 
-      const tenantName = selectedTenant?.displayName || selectedTenant?.licenseKey || "租户";
+      const tenantName = selectedTenant?.displayName || selectedTenant?.licenseKey || "用户";
       const fileName = `${tenantName}_货架数据_${new Date().toISOString().slice(0, 10)}.xlsx`;
       XLSX.writeFile(wb, fileName);
       toast.success("导出成功", { description: fileName });
@@ -94,15 +94,14 @@ export default function TenantDataManage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      {/* 租户列表 */}
+      {/* 数据详情 */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
-            租户列表
-          </CardTitle>
+            <Database className="w-5 h-5 text-primary" />
+            数据详情        </CardTitle>
           <CardDescription>
-            共 {tenants?.length ?? 0} 个租户，点击查看数据详情
+            共 {tenants?.length ?? 0} 个用户，点击查看数据详情
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -113,7 +112,7 @@ export default function TenantDataManage() {
           ) : !tenants?.length ? (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p>暂无租户，请先生成序列号并分发给用户</p>
+              <p>暂无用户，请先生成序列号并分发给用户</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -136,7 +135,7 @@ export default function TenantDataManage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-semibold text-foreground">
-                          {t.displayName || "未命名租户"}
+                          {t.displayName || "未命名用户"}
                         </span>
                         <Badge variant="secondary" className={`${status.color} flex items-center gap-1 text-xs`}>
                           <StatusIcon className="w-3 h-3" />
@@ -183,20 +182,39 @@ export default function TenantDataManage() {
 
       {/* 选中租户的数据概览 + 导出 */}
       {selectedTenantId && (
+        <>
+        {/* 用户名称信息卡 */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-blue-600 font-medium mb-1">用户名称</p>
+                <p className="text-lg font-semibold text-blue-900">{selectedTenant?.displayName}</p>
+              </div>
+              <div className="text-xs text-blue-600 bg-white px-2 py-1 rounded">
+                不可修改
+              </div>
+            </div>
+            <p className="text-xs text-blue-600 mt-3 leading-relaxed">
+              ✓ 用户名称在首次登录时设置，为了保证数据一致性，已锁定不可修改。
+            </p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Database className="w-5 h-5 text-primary" />
-                  {selectedTenant?.displayName || "租户"} 的数据
+                  数据详情
                 </CardTitle>
                 <CardDescription>
                   {dataLoading
                     ? "加载中..."
                     : tenantData?.length
                     ? `共 ${tenantData.length} 条记录`
-                    : "该租户暂无上传数据"}
+                    : "该用户暂无上传数据"}
                 </CardDescription>
               </div>
               <Button
@@ -264,6 +282,7 @@ export default function TenantDataManage() {
             )}
           </CardContent>
         </Card>
+        </>
       )}
     </div>
   );

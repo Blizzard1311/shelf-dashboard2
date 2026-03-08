@@ -32,11 +32,15 @@ export default function TenantLogin() {
       setError("请输入序列号");
       return;
     }
+    if (!displayName.trim()) {
+      setError("请输入门店/用户名称");
+      return;
+    }
     setError("");
     setLoading(true);
     // 清除管理员状态，确保租户登录时不会同时保留管理员身份
     await adminLogout();
-    const result = await tenantLogin(licenseKey.trim(), displayName.trim() || undefined);
+    const result = await tenantLogin(licenseKey.trim(), displayName.trim());
     setLoading(false);
     if (!result.success) {
       setError(result.error || "登录失败");
@@ -168,7 +172,7 @@ export default function TenantLogin() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">
-                      门店/用户名称 <span className="text-muted-foreground font-normal">(可选)</span>
+                      门店/用户名称
                     </label>
                     <Input
                       value={displayName}
@@ -189,7 +193,7 @@ export default function TenantLogin() {
                   <Button
                     type="submit"
                     className="w-full h-11 text-base font-semibold"
-                    disabled={loading || !licenseKey.trim()}
+                    disabled={loading || !licenseKey.trim() || !displayName.trim()}
                     style={{
                       background: "linear-gradient(135deg, oklch(0.55 0.18 260), oklch(0.50 0.20 280))",
                       boxShadow: "0 4px 16px oklch(0.55 0.18 260 / 0.35)",
