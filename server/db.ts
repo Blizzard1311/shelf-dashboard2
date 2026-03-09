@@ -765,3 +765,109 @@ export async function getAdminDashboardData() {
 
   return dashboardData;
 }
+
+
+/** 对比两个上传会话的货架数据，计算变化指标 */
+export async function compareUploadSessions(sessionId1: number, sessionId2: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // 获取两个会话的基本信息
+  const session1 = await db.select().from(uploadSessions).where(eq(uploadSessions.id, sessionId1)).limit(1);
+  const session2 = await db.select().from(uploadSessions).where(eq(uploadSessions.id, sessionId2)).limit(1);
+
+  if (!session1[0] || !session2[0]) return null;
+
+  // 获取两个会话的货架数据
+  const data1 = await db.select().from(shelfData).where(eq(shelfData.sessionId, sessionId1));
+  const data2 = await db.select().from(shelfData).where(eq(shelfData.sessionId, sessionId2));
+
+  // 按货架编码分组计算效率
+  const calcEfficiency = (data: typeof data1) => {
+    const shelfMap = new Map<string, { total: number; sold: number }>();
+    data.forEach(row => {
+      const key = row.shelfCode || "unknown";
+      if (!shelfMap.has(key)) {
+        shelfMap.set(key, { total: 0, sold: 0 });
+      }
+      const shelf = shelfMap.get(key)!;
+      shelf.total++;
+      if (row.salesQty && row.salesQty > 0) {
+        shelf.sold++;
+      }
+    });
+
+    return Array.from(shelfMap.entries()).map(([code, { total, sold }]) => ({
+      shelfCode: code,
+      efficiency: total > 0 ? Math.round((sold / total) * 100) : 0,
+      totalFacing: total,
+      soldFacing: sold,
+    }));
+  };
+
+  const efficiency1 = calcEfficiency(data1);
+  const efficiency2 = calcEfficiency(data2);
+
+  // 对比效率变化
+  const efficiencyMap1 = new Map(efficiency1.map(e => [e.shelfCode, e]));
+  const efficiencyMap2 = new Map(efficiency2.map(e => [e.shelfCode, e]));
+
+  const shelfChanges = Array.from(efficiencyMap2.entries()).map(([code, eff2]) => {
+    const eff1 = efficiencyMap1.get(code);
+    const change = eff1 ? eff2.efficiency - eff1.efficiency : eff2.efficiency;
+    return {
+      shelfCode: code,
+      efficiencyBefore: eff1?.efficiency || 0,
+      efficiencyAfter: eff2.efficiency,
+      change,
+      status: change > 0 ? "improved" : change < 0 ? "declined" : "unchanged",
+    };
+  });
+
+  // 计算整体统计
+  const totalShelves = efficiencyMap2.size;
+  const improvedShelves = shelfChanges.filter(s => s.change > 0).length;
+  const declinedShelves = shelfChanges.filter(s => s.change < 0).length;
+  const unchangedShelves = shelfChanges.filter(s => s.change === 0).length;
+
+  const avgEfficiency1 = efficiency1.length > 0 
+    ? Math.round(efficiency1.reduce((sum, e) => sum + e.efficiency, 0) / efficiency1.length)
+    : 0;
+  const avgEfficiency2 = efficiency2.length > 0
+    ? Math.round(efficiency2.reduce((sum, e) => sum + e.efficiency, 0) / efficiency2.length)
+    : 0;
+
+  // 计算销售数据变化
+  const totalSalesQty1 = data1.reduce((sum, row) => sum + (row.salesQty || 0), 0);
+  const totalSalesQty2 = data2.reduce((sum, row) => sum + (row.salesQty || 0), 0);
+
+  return {
+    session1: {
+      id: session1[0].id,
+      fileName: session1[0].fileName,
+      createdAt: session1[0].createdAt,
+      shelfCount: session1[0].shelfCount,
+      productCount: session1[0].productCount,
+      avgEfficiency: avgEfficiency1,
+      totalSalesQty: totalSalesQty1,
+    },
+    session2: {
+      id: session2[0].id,
+      fileName: session2[0].fileName,
+      createdAt: session2[0].createdAt,
+      shelfCount: session2[0].shelfCount,
+      productCount: session2[0].productCount,
+      avgEfficiency: avgEfficiency2,
+      totalSalesQty: totalSalesQty2,
+    },
+    comparison: {
+      totalShelves,
+      improvedShelves,
+      declinedShelves,
+      unchangedShelves,
+      avgEfficiencyChange: avgEfficiency2 - avgEfficiency1,
+      totalSalesQtyChange: totalSalesQty2 - totalSalesQty1,
+      shelfChanges: shelfChanges.sort((a, b) => b.change - a.change), // 按改进幅度排序
+    },
+  };
+}

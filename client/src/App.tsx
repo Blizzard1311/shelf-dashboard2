@@ -18,6 +18,7 @@ import AdjustmentPlan from "./pages/AdjustmentPlan";
 import TenantLogin from "./pages/TenantLogin";
 import LicenseManage from "./pages/LicenseManage";
 import TenantDataManage from "./pages/TenantDataManage";
+import DataComparison from "./pages/DataComparison";
 
 /** 主路由：需要认证（管理员账号密码 或 租户序列号） */
 function AuthenticatedRouter() {
@@ -41,6 +42,8 @@ function AuthenticatedRouter() {
             <Route path="/upload" component={DataUpload} />
             <Route path="/shelf" component={ShelfPerspective} />
             <Route path="/grid" component={GridChart} />
+            {/* 数据对比分析 */}
+            <Route path="/comparison" component={DataComparison} />
             {/* 管理员页面 */}
             <Route path="/admin/license" component={LicenseManage} />
             <Route path="/admin/tenants" component={TenantDataManage} />

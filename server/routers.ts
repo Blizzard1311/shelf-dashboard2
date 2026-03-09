@@ -29,6 +29,7 @@ import {
   getTenantShelfData,
   expireOverdueTenants,
   getAdminDashboardData,
+  compareUploadSessions,
 } from "./db";
 
 /**
@@ -245,6 +246,16 @@ export const appRouter = router({
     dashboard: adminProcedure
       .query(async () => {
         return getAdminDashboardData();
+      }),
+  }),
+
+  // 数据对比分析
+  comparison: router({
+    // 对比两个上传会话的数据
+    compare: publicProcedure
+      .input(z.object({ sessionId1: z.number(), sessionId2: z.number() }))
+      .query(async ({ input }) => {
+        return compareUploadSessions(input.sessionId1, input.sessionId2);
       }),
   }),
 });

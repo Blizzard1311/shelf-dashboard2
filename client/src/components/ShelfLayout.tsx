@@ -59,6 +59,15 @@ const baseNavItems: NavItem[] = [
     shadowColor: "oklch(0.65 0.15 185)",
     description: "空间布局 · 占位分析",
   },
+  {
+    key: "comparison",
+    label: "数据对比",
+    icon: BarChart3,
+    path: "/comparison",
+    gradient: "from-emerald-500 to-green-600",
+    shadowColor: "oklch(0.65 0.15 150)",
+    description: "历史数据对比",
+  },
 ];
 
 const adminNavItems: NavItem[] = [
