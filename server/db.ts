@@ -691,3 +691,77 @@ export async function deleteLicenseKey(id: number): Promise<void> {
   // 删除序列号
   await db.delete(licenseKeys).where(eq(licenseKeys.id, id));
 }
+
+
+/** 获取管理员仪表板数据：所有租户的统计信息和货架效率 */
+export async function getAdminDashboardData() {
+  const db = await getDb();
+  if (!db) return [];
+
+  // 获取所有租户及其关联的序列号
+  const allTenants = await db
+    .select({
+      tenantId: tenants.id,
+      tenantName: tenants.displayName,
+      licenseKey: tenants.licenseKey,
+      tenantStatus: tenants.status,
+      activatedAt: tenants.activatedAt,
+      usedUploads: tenants.usedUploads,
+      maxUploads: tenants.maxUploads,
+      expiresAt: tenants.expiresAt,
+    })
+    .from(tenants);
+
+  // 对每个租户获取统计数据
+  const dashboardData = await Promise.all(
+    allTenants.map(async (tenant) => {
+      // 获取该租户的数据行数
+      const dataRows = await db
+        .select({ count: sql`COUNT(*) as count` })
+        .from(shelfData)
+        .where(eq(shelfData.tenantId, tenant.tenantId));
+
+      const totalDataCount = dataRows[0]?.count as number || 0;
+
+      // 获取该租户的最后上传时间
+      const lastUpload = await db
+        .select({ createdAt: uploadSessions.createdAt })
+        .from(uploadSessions)
+        .where(eq(uploadSessions.tenantId, tenant.tenantId))
+        .orderBy(desc(uploadSessions.createdAt))
+        .limit(1);
+
+      const lastUploadTime = lastUpload[0]?.createdAt || null;
+
+      // 计算该租户的货架效率
+      // 货架效率 = (有销售的陈列面位数 / 总陈列面位数) * 100%
+      const efficiencyData = await db
+        .select({
+          totalFacing: sql`COUNT(*) as total_facing`,
+          soldFacing: sql`SUM(CASE WHEN ${shelfData.salesQty} > 0 THEN 1 ELSE 0 END) as sold_facing`,
+        })
+        .from(shelfData)
+        .where(eq(shelfData.tenantId, tenant.tenantId));
+
+      const totalFacing = efficiencyData[0]?.totalFacing as number || 0;
+      const soldFacing = efficiencyData[0]?.soldFacing as number || 0;
+      const shelfEfficiency = totalFacing > 0 ? Math.round((soldFacing / totalFacing) * 100) : 0;
+
+      return {
+        tenantId: tenant.tenantId,
+        tenantName: tenant.tenantName || "未命名租户",
+        licenseKey: tenant.licenseKey,
+        tenantStatus: tenant.tenantStatus,
+        activatedAt: tenant.activatedAt,
+        expiresAt: tenant.expiresAt,
+        usedUploads: tenant.usedUploads,
+        maxUploads: tenant.maxUploads,
+        totalDataCount,
+        lastUploadTime,
+        shelfEfficiency,
+      };
+    })
+  );
+
+  return dashboardData;
+}

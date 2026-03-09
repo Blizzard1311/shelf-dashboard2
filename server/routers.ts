@@ -28,6 +28,7 @@ import {
   getLatestSessionIdForTenant,
   getTenantShelfData,
   expireOverdueTenants,
+  getAdminDashboardData,
 } from "./db";
 
 /**
@@ -235,6 +236,15 @@ export const appRouter = router({
       }))
       .query(async ({ input }) => {
         return getSummaryStats(input.sessionId, input.category);
+      }),
+  }),
+
+  // 管理员仪表板
+  admin: router({
+    // 获取管理员仪表板数据（所有用户的统计信息和货架效率）
+    dashboard: adminProcedure
+      .query(async () => {
+        return getAdminDashboardData();
       }),
   }),
 });

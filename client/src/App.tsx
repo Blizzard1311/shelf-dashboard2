@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider, useTenant } from "./contexts/TenantContext";
 import { AdminProvider, useAdmin } from "./contexts/AdminContext";
 import ShelfLayout from "./components/ShelfLayout";
+import AdminDashboard from "./pages/AdminDashboard";
 import Dashboard from "./pages/Dashboard";
 import DataUpload from "./pages/DataUpload";
 import ShelfPerspective from "./pages/ShelfPerspective";
@@ -20,6 +21,9 @@ import TenantDataManage from "./pages/TenantDataManage";
 
 /** 主路由：需要认证（管理员账号密码 或 租户序列号） */
 function AuthenticatedRouter() {
+  const { admin } = useAdmin();
+  const { tenant } = useTenant();
+
   return (
     <Switch>
       {/* 棚格图页面独立展示，不使用侧边栏布局 */}
@@ -32,7 +36,8 @@ function AuthenticatedRouter() {
       <Route>
         <ShelfLayout>
           <Switch>
-            <Route path="/" component={Dashboard} />
+            {/* 管理员显示仪表板，租户显示货架看板 */}
+            <Route path="/" component={admin ? AdminDashboard : Dashboard} />
             <Route path="/upload" component={DataUpload} />
             <Route path="/shelf" component={ShelfPerspective} />
             <Route path="/grid" component={GridChart} />
