@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, fileName, HEX(fileName) as fileNameHex, createdAt FROM upload_sessions ORDER BY createdAt DESC LIMIT 3",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute SELECT id, fileName, HEX(fileName) as fileNameHex, createdAt FROM upload_sessions ORDER BY createdAt DESC LIMIT 3",
+  "rows": [
+    {
+      "id": "180002",
+      "fileName": "éæºçæ_å®æç.xlsx",
+      "fileNameHex": "C3A9C29AC28FC3A6C29CC2BAC3A7C294C29FC3A6C288C2905FC3A5C2AEC28CC3A6C288C290C3A7C289C2882E786C7378",
+      "createdAt": "2026-02-28 02:31:55"
+    },
+    {
+      "id": "180001",
+      "fileName": "éæºçæ_å®æç.xlsx",
+      "fileNameHex": "C3A9C29AC28FC3A6C29CC2BAC3A7C294C29FC3A6C288C2905FC3A5C2AEC28CC3A6C288C290C3A7C289C2882E786C7378",
+      "createdAt": "2026-02-28 02:31:37"
+    }
+  ],
+  "messages": [
+    "210001\tå®¶å±",
+    "ç¨åå¨ä½æ°æ®.xlsx\tC3A5C2AEC2B6C3A5C2B1C285C3A7C294C2A8C3A5C293C281C3A5C282C2A8C3A4C2BDC28DC3A6C295C2B0C3A6C28DC2AE2E786C7378\t2026-03-02 01:52:07"
+  ],
+  "stdout": "id\tfileName\tfileNameHex\tcreatedAt\n210001\tå®¶å±ç¨åå¨ä½æ°æ®.xlsx\tC3A5C2AEC2B6C3A5C2B1C285C3A7C294C2A8C3A5C293C281C3A5C282C2A8C3A4C2BDC28DC3A6C295C2B0C3A6C28DC2AE2E786C7378\t2026-03-02 01:52:07\n180002\téæºçæ_å®æç.xlsx\tC3A9C29AC28FC3A6C29CC2BAC3A7C294C29FC3A6C288C2905FC3A5C2AEC28CC3A6C288C290C3A7C289C2882E786C7378\t2026-02-28 02:31:55\n180001\téæºçæ_å®æç.xlsx\tC3A9C29AC28FC3A6C29CC2BAC3A7C294C29FC3A6C288C2905FC3A5C2AEC28CC3A6C288C290C3A7C289C2882E786C7378\t2026-02-28 02:31:37\n",
+  "stderr": "",
+  "execution_time_ms": 1522
+}

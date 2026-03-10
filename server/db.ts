@@ -1,5 +1,6 @@
 import { eq, desc, sql, and, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import { createPool } from "mysql2";
 import { InsertUser, InsertShelfData, InsertUploadSession, users, shelfData, uploadSessions, licenseKeys, tenants, type LicenseKey, type Tenant, type InsertLicenseKey, type InsertTenant } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -9,7 +10,12 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // 显式创建 mysql2 连接池，指定 charset=utf8mb4 确保中文文件名正确读取
+      const pool = createPool({
+        uri: process.env.DATABASE_URL,
+        charset: 'utf8mb4',
+      });
+      _db = drizzle(pool);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;

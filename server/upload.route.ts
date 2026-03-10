@@ -156,8 +156,10 @@ router.post("/parse", upload.single("file"), async (req, res) => {
     let sessionId: number | null = null;
     try {
       // 1. 创建上传批次记录
+      // 修复文件名编码：multer 可能返回错误编码的文件名，需要转换为正确的 UTF-8
+      const fileName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
       sessionId = await createUploadSession({
-        fileName: req.file.originalname,
+        fileName: fileName,
         totalRows: validRows.length,
         shelfCount: shelfCodes.size,
         productCount: productCodes.size,

@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as shelf_data_count FROM shelf_data; SELECT COUNT(*) as session_count FROM upload_sessions;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute SELECT COUNT(*) as shelf_data_count FROM shelf_data; SELECT COUNT(*) as session_count FROM upload_sessions;",
+  "rows": [
+    {
+      "shelf_data_count": "12882"
+    },
+    {
+      "shelf_data_count": "session_count"
+    },
+    {
+      "shelf_data_count": "14"
+    }
+  ],
+  "messages": [],
+  "stdout": "shelf_data_count\n12882\nsession_count\n14\n",
+  "stderr": "",
+  "execution_time_ms": 1888
+}
