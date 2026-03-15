@@ -29,7 +29,6 @@ export const TEMPLATE_FIELDS = [
   "单层层数",
   "销售数量",
   "销售金额",
-  "销售毛利",
 ];
 
 // 模版 CDN 地址
@@ -185,7 +184,7 @@ router.post("/parse", upload.single("file"), async (req, res) => {
         stackCount: row["单层层数"] ? Number(row["单层层数"]) : null,
         salesQty: row["销售数量"] ? Number(row["销售数量"]) : null,
         salesAmount: row["销售金额"] !== null ? String(row["销售金额"]) : null,
-        grossProfit: row["销售毛利"] !== null ? String(row["销售毛利"]) : null,
+        grossProfit: row["销售毛利"] !== undefined && row["销售毛利"] !== null ? String(row["销售毛利"]) : null,
       }));
 
       await insertShelfDataBatch(insertRows);
