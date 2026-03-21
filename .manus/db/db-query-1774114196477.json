@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO license_keys (licenseKey, maxUploads, validDays, note, status, createdAt) VALUES ('SH-TEST-0001-0001', 3, 30, NULL, 'active', NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute INSERT INTO license_keys (licenseKey, maxUploads, validDays, note, status, createdAt) VALUES ('SH-TEST-0001-0001', 3, 30, NULL, 'active', NOW());",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1514
+}

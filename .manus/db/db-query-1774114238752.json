@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, displayName, licenseKey, tenantStatus, activatedAt, usedUploads, maxUploads, expiresAt FROM tenants;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute SELECT id, displayName, licenseKey, tenantStatus, activatedAt, usedUploads, maxUploads, expiresAt FROM tenants;",
+  "rows": [
+    {
+      "id": "1",
+      "displayName": "测试账号",
+      "licenseKey": "SH-WXKP-DCDU-V6PT",
+      "tenantStatus": "disabled",
+      "activatedAt": "2026-02-26 08:29:47",
+      "usedUploads": "2",
+      "maxUploads": "3",
+      "expiresAt": "2026-03-28 08:29:47"
+    },
+    {
+      "id": "30001",
+      "displayName": "11",
+      "licenseKey": "SH-ETY9-8FUK-HCVQ",
+      "tenantStatus": "active",
+      "activatedAt": "2026-02-28 02:31:19",
+      "usedUploads": "2",
+      "maxUploads": "3",
+      "expiresAt": "2026-03-30 02:31:19"
+    },
+    {
+      "id": "60001",
+      "displayName": "NULL",
+      "licenseKey": "SH-ARRT-2CEV-TR95",
+      "tenantStatus": "active",
+      "activatedAt": "2026-03-08 04:54:46",
+      "usedUploads": "0",
+      "maxUploads": "3",
+      "expiresAt": "2026-04-07 04:54:46"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdisplayName\tlicenseKey\ttenantStatus\tactivatedAt\tusedUploads\tmaxUploads\texpiresAt\n1\t测试账号\tSH-WXKP-DCDU-V6PT\tdisabled\t2026-02-26 08:29:47\t2\t3\t2026-03-28 08:29:47\n30001\t11\tSH-ETY9-8FUK-HCVQ\tactive\t2026-02-28 02:31:19\t2\t3\t2026-03-30 02:31:19\n60001\tNULL\tSH-ARRT-2CEV-TR95\tactive\t2026-03-08 04:54:46\t0\t3\t2026-04-07 04:54:46\n",
+  "stderr": "",
+  "execution_time_ms": 1501
+}

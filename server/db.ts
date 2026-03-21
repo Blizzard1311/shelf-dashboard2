@@ -659,11 +659,11 @@ export async function getTenantShelfData(tenantId: number) {
 export async function expireOverdueTenants(): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
-  const now = new Date();
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
   const result = await db.update(tenants).set({ status: 'expired' }).where(
     and(
       eq(tenants.status, 'active'),
-      sql`${tenants.expiresAt} IS NOT NULL AND ${tenants.expiresAt} < ${now}`
+      sql`${tenants.expiresAt} IS NOT NULL AND ${tenants.expiresAt} < ${sql.raw(`'${now}'`)}`
     )
   );
   return (result as any)[0]?.affectedRows ?? 0;

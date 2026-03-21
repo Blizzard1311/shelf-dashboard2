@@ -1,0 +1,9 @@
+{
+  "query": "DELETE FROM license_keys WHERE licenseKey = 'SH-TEST-0001-0001';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute DELETE FROM license_keys WHERE licenseKey = 'SH-TEST-0001-0001';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1566
+}
