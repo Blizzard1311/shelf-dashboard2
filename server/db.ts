@@ -509,11 +509,12 @@ export async function createLicenseKey(data: { maxUploads: number; validDays: nu
   const db = await getDb();
   if (!db) throw new Error('Database not available');
   const licenseKeyStr = generateLicenseKeyString();
+  const trimmedNote = data.note?.trim();
   await db.insert(licenseKeys).values({
     key: licenseKeyStr,
     maxUploads: data.maxUploads,
     validDays: data.validDays,
-    note: data.note || null,
+    ...(trimmedNote ? { note: trimmedNote } : {}),
   });
   const rows = await db.select().from(licenseKeys).where(eq(licenseKeys.key, licenseKeyStr)).limit(1);
   return rows[0];

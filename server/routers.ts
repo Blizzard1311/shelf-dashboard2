@@ -74,7 +74,11 @@ export const appRouter = router({
         note: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return createLicenseKey(input);
+        return createLicenseKey({
+          maxUploads: input.maxUploads,
+          validDays: input.validDays,
+          ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+        });
       }),
 
     // 序列号列表
