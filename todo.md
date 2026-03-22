@@ -316,3 +316,9 @@
 
 - [x] 修复 createLicenseKey 函数：当 note 为空时，不将其传递给 Drizzle（仅传递必填字段）
 - [x] 验证所有 29 个测试通过
+
+## Bug 修复：Railway 上 shelf.latestSession 返回 500 错误
+
+- [ ] 修复 expireOverdueTenants 函数中的 SQL 参数绑定问题（使用 Drizzle 的 lt() 和 isNotNull() 而不是 sql.raw()）
+- [ ] 保存 checkpoint 并部署到 Railway
+- [ ] 验证 Railway 上的数据上传和货架看板功能正常

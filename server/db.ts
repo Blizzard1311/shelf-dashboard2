@@ -1,4 +1,4 @@
-import { eq, desc, sql, and, isNotNull } from "drizzle-orm";
+import { eq, desc, sql, and, isNotNull, lt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { createPool } from "mysql2";
 import { InsertUser, InsertShelfData, InsertUploadSession, users, shelfData, uploadSessions, licenseKeys, tenants, type LicenseKey, type Tenant, type InsertLicenseKey, type InsertTenant } from "../drizzle/schema";
@@ -659,11 +659,12 @@ export async function getTenantShelfData(tenantId: number) {
 export async function expireOverdueTenants(): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
-  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const now = new Date();
   const result = await db.update(tenants).set({ status: 'expired' }).where(
     and(
       eq(tenants.status, 'active'),
-      sql`${tenants.expiresAt} IS NOT NULL AND ${tenants.expiresAt} < ${sql.raw(`'${now}'`)}`
+      isNotNull(tenants.expiresAt),
+      lt(tenants.expiresAt, now)
     )
   );
   return (result as any)[0]?.affectedRows ?? 0;
