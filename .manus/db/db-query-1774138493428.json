@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, displayName, licenseKey, tenantStatus, usedUploads, maxUploads, activatedAt, expiresAt FROM tenants;\nSELECT id, licenseKey, maxUploads, validDays, note, status, createdAt FROM license_keys ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute SELECT id, displayName, licenseKey, tenantStatus, usedUploads, maxUploads, activatedAt, expiresAt FROM tenants;\nSELECT id, licenseKey, maxUploads, validDays, note, status, createdAt FROM license_keys ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "displayName": "测试账号",
+      "licenseKey": "SH-WXKP-DCDU-V6PT",
+      "tenantStatus": "disabled",
+      "usedUploads": "2",
+      "maxUploads": "3",
+      "activatedAt": "2026-02-26 08:29:47",
+      "expiresAt": "2026-03-28 08:29:47"
+    },
+    {
+      "id": "30001",
+      "displayName": "11",
+      "licenseKey": "SH-ETY9-8FUK-HCVQ",
+      "tenantStatus": "active",
+      "usedUploads": "2",
+      "maxUploads": "3",
+      "activatedAt": "2026-02-28 02:31:19",
+      "expiresAt": "2026-03-30 02:31:19"
+    },
+    {
+      "id": "60001",
+      "displayName": "NULL",
+      "licenseKey": "SH-ARRT-2CEV-TR95",
+      "tenantStatus": "active",
+      "usedUploads": "0",
+      "maxUploads": "3",
+      "activatedAt": "2026-03-08 04:54:46",
+      "expiresAt": "2026-04-07 04:54:46"
+    }
+  ],
+  "messages": [
+    "id\tlicenseKey\tmaxUploads\tvalidDays\tnote\tstatus\tcreatedAt",
+    "510001\tSH-64TR-R9MP-DQU4\t3\t30\ttest-license\tactive\t2026-03-21 17:59:07",
+    "480001\tSH-KUS4-NSC4-2UHR\t3\t30\ttest-license\tactive\t2026-03-21 17:42:48",
+    "450003\tSH-FP6P-F8K9-L4JK\t3\t30\ttest-license\tactive\t2026-03-21 17:21:48",
+    "450002\tSH-WSWC-N8L4-9WDL\t3\t30\ttest-license\tactive\t2026-03-21 17:17:31",
+    "450001\tSH-3RVW-HWLY-MZMC\t3\t30\ttest-license\tactive\t2026-03-21 17:16:59",
+    "420001\tSH-PZQ8-4B5B-LKQT\t3\t30\tNULL\tactive\t2026-03-21 15:39:18",
+    "390001\tSH-XNTY-F8SP-AJZX\t3\t30\ttest-license\tactive\t2026-03-21 15:27:17",
+    "360001\tSH-H74R-N2R5-LW58\t3\t30\ttest-license\tactive\t2026-03-15 00:13:35",
+    "330001\tSH-PEXN-CFNU-XWZZ\t3\t30\ttest-license\tactive\t2026-03-10 00:43:54",
+    "300004\tSH-BKVN-DTKD-77MD\t3\t30\ttest-license\tactive\t2026-03-09 05:11:26"
+  ],
+  "stdout": "id\tdisplayName\tlicenseKey\ttenantStatus\tusedUploads\tmaxUploads\tactivatedAt\texpiresAt\n1\t测试账号\tSH-WXKP-DCDU-V6PT\tdisabled\t2\t3\t2026-02-26 08:29:47\t2026-03-28 08:29:47\n30001\t11\tSH-ETY9-8FUK-HCVQ\tactive\t2\t3\t2026-02-28 02:31:19\t2026-03-30 02:31:19\n60001\tNULL\tSH-ARRT-2CEV-TR95\tactive\t0\t3\t2026-03-08 04:54:46\t2026-04-07 04:54:46\nid\tlicenseKey\tmaxUploads\tvalidDays\tnote\tstatus\tcreatedAt\n510001\tSH-64TR-R9MP-DQU4\t3\t30\ttest-license\tactive\t2026-03-21 17:59:07\n480001\tSH-KUS4-NSC4-2UHR\t3\t30\ttest-license\tactive\t2026-03-21 17:42:48\n450003\tSH-FP6P-F8K9-L4JK\t3\t30\ttest-license\tactive\t2026-03-21 17:21:48\n450002\tSH-WSWC-N8L4-9WDL\t3\t30\ttest-license\tactive\t2026-03-21 17:17:31\n450001\tSH-3RVW-HWLY-MZMC\t3\t30\ttest-license\tactive\t2026-03-21 17:16:59\n420001\tSH-PZQ8-4B5B-LKQT\t3\t30\tNULL\tactive\t2026-03-21 15:39:18\n390001\tSH-XNTY-F8SP-AJZX\t3\t30\ttest-license\tactive\t2026-03-21 15:27:17\n360001\tSH-H74R-N2R5-LW58\t3\t30\ttest-license\tactive\t2026-03-15 00:13:35\n330001\tSH-PEXN-CFNU-XWZZ\t3\t30\ttest-license\tactive\t2026-03-10 00:43:54\n300004\tSH-BKVN-DTKD-77MD\t3\t30\ttest-license\tactive\t2026-03-09 05:11:26\n",
+  "stderr": "",
+  "execution_time_ms": 1717
+}

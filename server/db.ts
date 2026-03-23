@@ -11,11 +11,20 @@ export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
       // 显式创建 mysql2 连接池，指定 charset=utf8mb4 确保中文文件名正确读取
+      // Railway 生产环境需要 SSL 连接，否则会 ETIMEDOUT
+      const dbUrl = process.env.DATABASE_URL;
+      // 强制开启 SSL（生产环境必须）
       const pool = createPool({
-        uri: process.env.DATABASE_URL,
+        uri: dbUrl,
         charset: 'utf8mb4',
+        ssl: { rejectUnauthorized: false },
+        connectionLimit: 10,
+        connectTimeout: 30000,
+        waitForConnections: true,
+        queueLimit: 0,
       });
       _db = drizzle(pool);
+      console.log('[Database] Connection pool created with SSL enabled');
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;

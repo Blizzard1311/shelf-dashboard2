@@ -193,9 +193,15 @@ router.post("/parse", upload.single("file"), async (req, res) => {
       if (tenantId) {
         await incrementTenantUploads(tenantId);
       }
-    } catch (dbErr) {
+    } catch (dbErr: any) {
       console.error("[upload/parse] DB error:", dbErr);
-      // 数据库失败不阻断响应，仍返回解析结果
+      // 数据库写入失败，返回错误给前端
+      res.status(500).json({
+        success: false,
+        error: `数据写入数据库失败：${dbErr?.message ?? String(dbErr)}`,
+        dbError: true,
+      });
+      return;
     }
 
     res.json({

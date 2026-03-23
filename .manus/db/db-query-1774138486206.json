@@ -1,0 +1,26 @@
+{
+  "query": "SELECT 'tenants' as tbl, COUNT(*) as cnt FROM tenants\nUNION ALL\nSELECT 'license_keys', COUNT(*) FROM license_keys\nUNION ALL\nSELECT 'upload_sessions', COUNT(*) FROM upload_sessions\nUNION ALL\nSELECT 'shelf_data', COUNT(*) FROM shelf_data;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user zukVVkxLUvLkVbD.0e7b3f4e91a8 --database mK5cPqBYGvPvZaJg4dkNDx --execute SELECT 'tenants' as tbl, COUNT(*) as cnt FROM tenants\nUNION ALL\nSELECT 'license_keys', COUNT(*) FROM license_keys\nUNION ALL\nSELECT 'upload_sessions', COUNT(*) FROM upload_sessions\nUNION ALL\nSELECT 'shelf_data', COUNT(*) FROM shelf_data;",
+  "rows": [
+    {
+      "tbl": "license_keys",
+      "cnt": "30"
+    },
+    {
+      "tbl": "upload_sessions",
+      "cnt": "0"
+    },
+    {
+      "tbl": "tenants",
+      "cnt": "3"
+    },
+    {
+      "tbl": "shelf_data",
+      "cnt": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tcnt\nlicense_keys\t30\nupload_sessions\t0\ntenants\t3\nshelf_data\t0\n",
+  "stderr": "",
+  "execution_time_ms": 1607
+}

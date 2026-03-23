@@ -319,6 +319,14 @@
 
 ## Bug 修复：Railway 上 shelf.latestSession 返回 500 错误
 
-- [ ] 修复 expireOverdueTenants 函数中的 SQL 参数绑定问题（使用 Drizzle 的 lt() 和 isNotNull() 而不是 sql.raw()）
-- [ ] 保存 checkpoint 并部署到 Railway
+- [x] 修复 expireOverdueTenants 函数中的 SQL 参数绑定问题（使用 Drizzle 的 lt() 和 isNotNull() 而不是 sql.raw()）
+- [x] 保存 checkpoint 并部署到 Railway
 - [ ] 验证 Railway 上的数据上传和货架看板功能正常
+
+## Bug 修复：Railway 上数据上传失败（ETIMEDOUT）
+
+- [x] 诊断根本原因：Railway 数据库需要 SSL 连接，但代码没有启用 SSL
+- [x] 修复数据库连接配置：强制启用 SSL，添加连接池参数
+- [x] 修复上传路由：数据库错误不再被吞掉，返回给前端
+- [x] 所有 29 个测试通过
+- [ ] 推送到 GitHub 并部署到 Railway
