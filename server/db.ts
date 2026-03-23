@@ -9,13 +9,13 @@ let _dbPromise: Promise<ReturnType<typeof drizzle>> | null = null;
 
 const createDbConnection = (): Promise<ReturnType<typeof drizzle>> => {
   return new Promise((resolve, reject) => {
-    if (!process.env.DATABASE_URL) {
+    if (!ENV.databaseUrl) {
       console.error('[Database] ERROR: DATABASE_URL environment variable is not set.');
       return reject(new Error('DATABASE_URL is not configured.'));
     }
 
     try {
-      const dbUrl = process.env.DATABASE_URL;
+      const dbUrl = ENV.databaseUrl;
       const pool = createPool({
         uri: dbUrl,
         charset: 'utf8mb4',
