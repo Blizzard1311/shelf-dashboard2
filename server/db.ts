@@ -17,7 +17,6 @@ export async function getDb() {
       const pool = createPool({
         uri: dbUrl,
         charset: 'utf8mb4',
-        ssl: { rejectUnauthorized: false },
         connectionLimit: 10,
         connectTimeout: 30000,
         waitForConnections: true,
@@ -684,7 +683,7 @@ export async function expireOverdueTenants(): Promise<number> {
 export async function deleteLicenseKey(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
-  
+
   // 检查序列号是否存在且是停用状态
   const license = await db.select().from(licenseKeys).where(eq(licenseKeys.id, id)).limit(1);
   if (license.length === 0) {
@@ -693,7 +692,7 @@ export async function deleteLicenseKey(id: number): Promise<void> {
   if (license[0].status !== 'disabled') {
     throw new Error('仅能删除停用状态的序列号');
   }
-  
+
   // 删除关联的租户数据
   const relatedTenants = await db.select().from(tenants).where(eq(tenants.licenseKeyId, id));
   for (const t of relatedTenants) {
@@ -704,7 +703,7 @@ export async function deleteLicenseKey(id: number): Promise<void> {
     // 删除该租户记录
     await db.delete(tenants).where(eq(tenants.id, t.id));
   }
-  
+
   // 删除序列号
   await db.delete(licenseKeys).where(eq(licenseKeys.id, id));
 }
@@ -847,7 +846,7 @@ export async function compareUploadSessions(sessionId1: number, sessionId2: numb
   const declinedShelves = shelfChanges.filter(s => s.change < 0).length;
   const unchangedShelves = shelfChanges.filter(s => s.change === 0).length;
 
-  const avgEfficiency1 = efficiency1.length > 0 
+  const avgEfficiency1 = efficiency1.length > 0
     ? Math.round(efficiency1.reduce((sum, e) => sum + e.efficiency, 0) / efficiency1.length)
     : 0;
   const avgEfficiency2 = efficiency2.length > 0
