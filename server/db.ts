@@ -5,15 +5,17 @@ import { InsertUser, InsertShelfData, InsertUploadSession, users, shelfData, upl
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _dbPromise: Promise<ReturnType<typeof drizzle>> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
-export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+const createDbConnection = (): Promise<ReturnType<typeof drizzle>> => {
+  return new Promise((resolve, reject) => {
+    if (!process.env.DATABASE_URL) {
+      console.error('[Database] ERROR: DATABASE_URL environment variable is not set.');
+      return reject(new Error('DATABASE_URL is not configured.'));
+    }
+
     try {
-      // 显式创建 mysql2 连接池，指定 charset=utf8mb4 确保中文文件名正确读取
-      // Railway 生产环境需要 SSL 连接，否则会 ETIMEDOUT
       const dbUrl = process.env.DATABASE_URL;
-      // 强制开启 SSL（生产环境必须）
       const pool = createPool({
         uri: dbUrl,
         charset: 'utf8mb4',
@@ -22,15 +24,43 @@ export async function getDb() {
         waitForConnections: true,
         queueLimit: 0,
       });
-      _db = drizzle(pool);
-      console.log('[Database] Connection pool created with SSL enabled');
+
+      const dbInstance = drizzle(pool);
+
+      // Verify connection
+      pool.getConnection((err, connection) => {
+        if (err) {
+          console.error('[Database] Failed to get a connection from the pool:', err);
+          return reject(err);
+        }
+        console.log('[Database] Successfully connected to the database.');
+        connection.release();
+        _db = dbInstance;
+        resolve(dbInstance);
+      });
+
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
+      console.error("[Database] Failed to create connection pool:", error);
+      reject(error);
     }
+  });
+};
+
+export const getDb = async (): Promise<ReturnType<typeof drizzle>> => {
+  if (_db) {
+    return Promise.resolve(_db);
   }
-  return _db;
-}
+  if (!_dbPromise) {
+    _dbPromise = createDbConnection();
+  }
+
+  const db = await _dbPromise;
+  if (!db) {
+    // This case should ideally not be reached if createDbConnection is implemented correctly
+    throw new Error('Database not available');
+  }
+  return db;
+};
 
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
