@@ -131,24 +131,34 @@ router.post("/parse", upload.single("file"), async (req, res) => {
       }
     }
 
-    // 提取租户信息
+    // 提取租户信息 - 必须是租户才能上传
     let tenantId: number | null = null;
     try {
       const tenantInfo = await extractTenantFromRequest(req);
-      if (tenantInfo) {
-        tenantId = tenantInfo.tenantId;
-        // 检查租户是否还能上传
-        const tenant = await getTenantById(tenantId);
-        if (tenant) {
-          const uploadCheck = canTenantUpload(tenant);
-          if (!uploadCheck.canUpload) {
-            res.status(403).json({ success: false, error: uploadCheck.reason });
-            return;
-          }
+      if (!tenantInfo) {
+        res.status(401).json({ 
+          success: false, 
+          error: "请先通过序列号登录系统才能上传数据" 
+        });
+        return;
+      }
+      tenantId = tenantInfo.tenantId;
+      // 检查租户是否还能上传
+      const tenant = await getTenantById(tenantId);
+      if (tenant) {
+        const uploadCheck = canTenantUpload(tenant);
+        if (!uploadCheck.canUpload) {
+          res.status(403).json({ success: false, error: uploadCheck.reason });
+          return;
         }
       }
     } catch (e) {
-      // 非租户上传，继续
+      console.error('[upload/parse] Tenant extraction error:', e);
+      res.status(500).json({ 
+        success: false, 
+        error: "获取租户信息失败，请重新登录" 
+      });
+      return;
     }
 
     // 持久化到数据库
