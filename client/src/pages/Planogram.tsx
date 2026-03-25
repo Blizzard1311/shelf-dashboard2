@@ -77,7 +77,7 @@ function ProductCell({ item, isTopQty, isTopAmount, unitWidth, unitHeight }: Pro
 
   return (
     <div
-         title={`${item.productName ?? ""} (${item.productCode ?? ""})
+      title={`${item.productName ?? ""} (${item.productCode ?? ""})
 陈列面数: ${facing}
 销售数量: ${item.salesQty ?? "—"}
 销售金额: ¥${fmtAmount(salesAmountNum)}
@@ -223,7 +223,7 @@ export default function Planogram() {
     const totalQty = items.reduce((s, i) => s + (i.salesQty ?? 0), 0);
     // 商品种数
     const productCount = new Set(items.map(i => i.productCode).filter(Boolean)).size;
-    // 动效率
+    // 动销率
     const activeFacings = items.reduce((s, i) => s + ((i.salesQty ?? 0) > 0 ? Math.max(1, i.facingCount ?? 1) : 0), 0);
     const totalFacings = items.reduce((s, i) => s + Math.max(1, i.facingCount ?? 1), 0);
     const facingActivityRate = totalFacings > 0 ? Math.round(activeFacings / totalFacings * 1000) / 10 : 0;
@@ -338,11 +338,11 @@ export default function Planogram() {
           <p className="text-xl font-bold text-gray-800">{fmtQty(summary.totalQty)}</p>
           <p className="text-xs text-gray-400 mt-0.5">顾客拿取次数</p>
         </div>
-        {/* 动效率 */}
+        {/* 动销率 */}
         <div className="rounded-2xl p-4" style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", borderLeft: "4px solid #f59e0b" }}>
           <div className="flex items-center gap-2 mb-1" style={{ color: "#f59e0b" }}>
             <TrendingUp size={18} />
-            <span className="text-xs font-medium text-gray-500">动效率</span>
+            <span className="text-xs font-medium text-gray-500">动销率</span>
           </div>
           <p
             className="text-xl font-bold"

@@ -102,7 +102,7 @@ function ShelfCard({ shelfCode, totalSalesQty, productCount, facingActivityRate,
   ];
   const colorSet = colorSets[rank % colorSets.length];
 
-  // 动效率颜色：>=80% 绿，>=50% 黄，<50% 红
+  // 动销率颜色：>=80% 绿，>=50% 黄，<50% 红
   const rateColor = facingActivityRate >= 80
     ? "rgba(134,239,172,0.95)"
     : facingActivityRate >= 50
@@ -136,9 +136,9 @@ function ShelfCard({ shelfCode, totalSalesQty, productCount, facingActivityRate,
         </span>
       </div>
 
-      {/* 动效率 - 突出显示 */}
+      {/* 动销率 - 突出显示 */}
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.72)" }}>动效率</p>
+        <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.72)" }}>动销率</p>
         <span
           className="text-sm font-bold px-2.5 py-0.5 rounded-full"
           style={{ background: rateColor, color: rateTextColor }}
