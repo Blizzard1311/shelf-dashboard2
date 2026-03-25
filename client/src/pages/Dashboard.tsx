@@ -25,7 +25,7 @@ const featureCards = [
     bgGradient: "linear-gradient(135deg, oklch(0.55 0.18 300), oklch(0.48 0.22 310))",
     shadowColor: "oklch(0.55 0.18 300 / 0.35)",
     description: "全场货架全局扫描，快速发现销售异常货架",
-    stats: "排面动效率 · 销售总金额",
+    stats: "排面动销率 · 销售总金额",
     statIcon: TrendingUp,
   },
   {

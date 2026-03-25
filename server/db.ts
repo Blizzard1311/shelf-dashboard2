@@ -367,7 +367,7 @@ export async function getShelfProductEfficiency(sessionId: number, shelfCode: st
  * 货架卡看板区域一汇总指标：支持大类筛选
  * - 货架总数：该大类下完全属于该大类的货架数（即该货架上所有商品均属于该大类）
  * - 商品数量：该大类下不重复的 SKU 数
- * - 排面动效率：有销售商品的排面数 ÷ 总排面数
+ * - 排面动销率：有销售商品的排面数 ÷ 总排面数
  * - 销售总金额：该大类销售金额汇总
  */
 export async function getSummaryStats(sessionId: number, category?: string) {

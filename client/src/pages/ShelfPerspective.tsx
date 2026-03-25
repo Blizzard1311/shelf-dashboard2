@@ -106,8 +106,8 @@ function ShelfCard({ shelfCode, totalSalesQty, productCount, facingActivityRate,
   const rateColor = facingActivityRate >= 80
     ? "rgba(134,239,172,0.95)"
     : facingActivityRate >= 50
-    ? "rgba(253,224,71,0.95)"
-    : "rgba(252,165,165,0.95)";
+      ? "rgba(253,224,71,0.95)"
+      : "rgba(252,165,165,0.95)";
   const rateTextColor = facingActivityRate >= 80 ? "#166534" : facingActivityRate >= 50 ? "#854d0e" : "#991b1b";
 
   return (
@@ -192,7 +192,7 @@ function ShelfCard({ shelfCode, totalSalesQty, productCount, facingActivityRate,
           </p>
         </div>
         <div className="flex items-end justify-end">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5"><path d="M9 18l6-6-6-6" /></svg>
         </div>
       </div>
     </div>
@@ -522,7 +522,7 @@ export default function ShelfPerspective() {
   return (
     <div className="flex flex-col gap-6">
       {/* ── 顶部操作栏 ── */}
-      <div className="flex items-center justify-between flex-wrap gap-3" style={{paddingTop: '4px', paddingRight: '22px', paddingLeft: '24px', marginTop: '9px', marginBottom: '-10px'}}>
+      <div className="flex items-center justify-between flex-wrap gap-3" style={{ paddingTop: '4px', paddingRight: '22px', paddingLeft: '24px', marginTop: '9px', marginBottom: '-10px' }}>
         {/* 大类筛选器 */}
         <div className="flex items-center gap-2 flex-wrap">
           {categoryList.length > 0 && (
@@ -613,7 +613,7 @@ export default function ShelfPerspective() {
           bgColor="#ecfeff"
         />
         <StatCard
-          title="排面动效率"
+          title="排面动销率"
           value={isLoading ? "…" : (stats?.facingActivityRate != null ? `${stats.facingActivityRate}%` : "—")}
           subtitle={isLoading ? "" : (stats ? `${fmtNumber(stats.activeFacings)} / ${fmtNumber(stats.totalFacings)} 面` : "")}
           icon={<BarChart3 size={22} />}
