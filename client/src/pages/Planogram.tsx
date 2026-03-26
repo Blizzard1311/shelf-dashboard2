@@ -308,7 +308,7 @@ export default function Planogram() {
           }}
         >
           <ArrowLeft size={16} />
-          返回货架总览
+          返回
         </button>
         <div>
           <h1 className="text-xl font-bold text-gray-800">

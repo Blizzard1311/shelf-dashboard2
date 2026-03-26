@@ -555,7 +555,7 @@ export default function VitalityDetail() {
           }}
         >
           <ArrowLeft size={16} />
-          返回效率总览
+          返回
         </button>
         <div>
           <h1 className="text-xl font-bold text-gray-800">

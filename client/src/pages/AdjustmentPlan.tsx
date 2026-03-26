@@ -418,7 +418,7 @@ export default function AdjustmentPlan() {
             className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
             style={{ background: "linear-gradient(135deg, oklch(0.65 0.15 185), oklch(0.60 0.18 200))" }}
           >
-            返回效率总览
+            返回
           </button>
         </div>
       </div>

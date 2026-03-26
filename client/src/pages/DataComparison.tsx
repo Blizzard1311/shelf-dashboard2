@@ -3,7 +3,6 @@ import { trpc } from "@/lib/trpc";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, TrendingUp, TrendingDown, Minus, ArrowLeft } from "lucide-react";
@@ -40,15 +39,20 @@ export default function DataComparison() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* 返回按钮 */}
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
+        type="button"
         onClick={() => setLocation("/")}
-        className="mb-4"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all"
+        style={{
+          background: "white",
+          border: "1px solid #e5e7eb",
+          color: "#374151",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+        }}
       >
-        <ArrowLeft className="w-4 h-4 mr-2" />
+        <ArrowLeft size={16} />
         返回
-      </Button>
+      </button>
 
       {/* 标题 */}
       <div>
