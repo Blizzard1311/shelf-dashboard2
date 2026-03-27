@@ -10,6 +10,8 @@ import {
   getShelfSummaryList,
   getShelfCodeList,
   getUploadSessions,
+  getUploadSessionById,
+  getUploadSessionsForTenant,
   getShelfPlanogramData,
   getCategoryList,
   getShelfSummaryListPaged,
@@ -32,13 +34,45 @@ import {
   compareUploadSessions,
 } from "./db";
 
+type DataAccessContext = {
+  user: { role?: string } | null;
+  tenant: { tenantId: number } | null;
+};
+
+function assertDataViewer(ctx: DataAccessContext) {
+  if (ctx.user?.role === "admin" || ctx.tenant?.tenantId) {
+    return;
+  }
+  throw new TRPCError({ code: "UNAUTHORIZED", message: "请先登录后查看数据" });
+}
+
+async function assertSessionAccess(ctx: DataAccessContext, sessionId: number) {
+  assertDataViewer(ctx);
+
+  const session = await getUploadSessionById(sessionId);
+  if (!session) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "上传批次不存在" });
+  }
+
+  if (ctx.user?.role === "admin") {
+    return session;
+  }
+
+  if (session.tenantId !== ctx.tenant?.tenantId) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "无权访问其他序列号的数据" });
+  }
+
+  return session;
+}
+
 /**
  * 获取当前请求的有效 sessionId：
  * - 租户：取该租户最新的 sessionId
  * - 管理员：取全局最新（或指定租户的）sessionId
- * - 未登录：取全局最新
+ * - 未登录：禁止访问
  */
 async function resolveSessionId(ctx: { user: any; tenant: any }, overrideTenantId?: number): Promise<number | null> {
+  assertDataViewer(ctx);
   // 管理员查看指定租户数据
   if (overrideTenantId && ctx.user?.role === 'admin') {
     return getLatestSessionIdForTenant(overrideTenantId);
@@ -47,7 +81,7 @@ async function resolveSessionId(ctx: { user: any; tenant: any }, overrideTenantI
   if (ctx.tenant?.tenantId) {
     return getLatestSessionIdForTenant(ctx.tenant.tenantId);
   }
-  // 管理员或未登录：全局最新
+  // 管理员：全局最新
   return getLatestSessionId();
 }
 
@@ -148,40 +182,49 @@ export const appRouter = router({
     // 看板统计数据
     dashboardStats: publicProcedure
       .input(z.object({ sessionId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId);
         return getShelfDashboardStats(input.sessionId);
       }),
 
     // 货架方块列表（按货架编码汇总）
     shelfList: publicProcedure
       .input(z.object({ sessionId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId);
         return getShelfSummaryList(input.sessionId);
       }),
 
     // 货架编码列表（用于筛选）
     shelfCodes: publicProcedure
       .input(z.object({ sessionId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId);
         return getShelfCodeList(input.sessionId);
       }),
 
     // 上传历史列表
-    uploadSessions: publicProcedure.query(async () => {
-      return getUploadSessions();
+    uploadSessions: publicProcedure.query(async ({ ctx }) => {
+      assertDataViewer(ctx);
+      if (ctx.user?.role === "admin") {
+        return getUploadSessions();
+      }
+      return getUploadSessionsForTenant(ctx.tenant!.tenantId);
     }),
 
     // 单货架棚格图数据
     planogram: publicProcedure
       .input(z.object({ sessionId: z.number(), shelfCode: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId);
         return getShelfPlanogramData(input.sessionId, input.shelfCode);
       }),
 
     // 大类列表（用于筛选器下拉）
     categoryList: publicProcedure
       .input(z.object({ sessionId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId);
         return getCategoryList(input.sessionId);
       }),
 
@@ -193,7 +236,8 @@ export const appRouter = router({
         pageSize: z.number().min(1).max(100).default(20),
         category: z.string().optional(),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId);
         return getShelfSummaryListPaged(
           input.sessionId,
           input.page,
@@ -205,14 +249,16 @@ export const appRouter = router({
     // 全场汇总指标（生命力透视顶部卡片）
     overallEfficiency: publicProcedure
       .input(z.object({ sessionId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId);
         return getOverallEfficiencyStats(input.sessionId);
       }),
 
     // 按大类汇总排面效率
     categoryEfficiency: publicProcedure
       .input(z.object({ sessionId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId);
         return getCategoryEfficiencyList(input.sessionId);
       }),
 
@@ -222,14 +268,16 @@ export const appRouter = router({
         sessionId: z.number(),
         category: z.string().optional(),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId);
         return getShelfEfficiencyList(input.sessionId, input.category);
       }),
 
     // 单货架商品排面效率详情（生命力透视第二层）
     shelfProductEfficiency: publicProcedure
       .input(z.object({ sessionId: z.number(), shelfCode: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId);
         return getShelfProductEfficiency(input.sessionId, input.shelfCode);
       }),
 
@@ -239,7 +287,8 @@ export const appRouter = router({
         sessionId: z.number(),
         category: z.string().optional(),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId);
         return getSummaryStats(input.sessionId, input.category);
       }),
   }),
@@ -258,7 +307,9 @@ export const appRouter = router({
     // 对比两个上传会话的数据
     compare: publicProcedure
       .input(z.object({ sessionId1: z.number(), sessionId2: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await assertSessionAccess(ctx, input.sessionId1);
+        await assertSessionAccess(ctx, input.sessionId2);
         return compareUploadSessions(input.sessionId1, input.sessionId2);
       }),
   }),

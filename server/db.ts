@@ -247,6 +247,30 @@ export async function getUploadSessions() {
   return db.select().from(uploadSessions).orderBy(desc(uploadSessions.createdAt)).limit(10);
 }
 
+/** 根据 ID 获取上传批次 */
+export async function getUploadSessionById(sessionId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(uploadSessions)
+    .where(eq(uploadSessions.id, sessionId))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** 获取指定租户的上传批次列表 */
+export async function getUploadSessionsForTenant(tenantId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(uploadSessions)
+    .where(eq(uploadSessions.tenantId, tenantId))
+    .orderBy(desc(uploadSessions.createdAt))
+    .limit(10);
+}
+
 /** 获取大类列表（用于筛选器下拉） */
 export async function getCategoryList(sessionId: number): Promise<string[]> {
   const db = await getDb();

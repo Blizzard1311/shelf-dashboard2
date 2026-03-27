@@ -1,4 +1,52 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("./db", () => ({
+  getLatestSessionId: vi.fn().mockResolvedValue(1),
+  getLatestSessionIdForTenant: vi.fn(async (tenantId: number) =>
+    tenantId === 999 ? null : tenantId * 10
+  ),
+  getUploadSessionById: vi.fn(async (sessionId: number) => ({
+    id: sessionId,
+    tenantId: Math.floor(sessionId / 10),
+    fileName: "test.xlsx",
+    totalRows: 0,
+    shelfCount: 0,
+    productCount: 0,
+    uploadedBy: null,
+    createdAt: new Date(),
+  })),
+  getUploadSessions: vi.fn().mockResolvedValue([]),
+  getUploadSessionsForTenant: vi.fn().mockResolvedValue([]),
+  getShelfDashboardStats: vi.fn().mockResolvedValue(null),
+  getShelfSummaryList: vi.fn().mockResolvedValue([]),
+  getShelfCodeList: vi.fn().mockResolvedValue([]),
+  getShelfPlanogramData: vi.fn().mockResolvedValue([]),
+  getCategoryList: vi.fn().mockResolvedValue([]),
+  getShelfSummaryListPaged: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
+  getShelfEfficiencyList: vi.fn().mockResolvedValue([]),
+  getOverallEfficiencyStats: vi.fn().mockResolvedValue(null),
+  getCategoryEfficiencyList: vi.fn().mockResolvedValue([]),
+  getShelfProductEfficiency: vi.fn().mockResolvedValue([]),
+  getSummaryStats: vi.fn().mockResolvedValue(null),
+  createLicenseKey: vi.fn().mockResolvedValue({
+    id: 1,
+    key: "SH-TEST-TEST-TEST",
+    maxUploads: 3,
+    validDays: 30,
+    note: "test-license",
+    status: "active",
+    createdAt: new Date(),
+  }),
+  getLicenseKeyList: vi.fn().mockResolvedValue([]),
+  disableLicenseKey: vi.fn().mockResolvedValue(undefined),
+  deleteLicenseKey: vi.fn().mockResolvedValue(undefined),
+  getTenantList: vi.fn().mockResolvedValue([]),
+  getTenantById: vi.fn().mockResolvedValue(null),
+  getTenantShelfData: vi.fn().mockResolvedValue([]),
+  expireOverdueTenants: vi.fn().mockResolvedValue(0),
+  getAdminDashboardData: vi.fn().mockResolvedValue([]),
+  compareUploadSessions: vi.fn().mockResolvedValue(null),
+}));
 import { appRouter } from "./routers";
 import { COOKIE_NAME, TENANT_COOKIE_NAME } from "../shared/const";
 import type { TrpcContext } from "./_core/context";
